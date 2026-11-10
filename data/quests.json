@@ -1,0 +1,622 @@
+{
+  "quests": [
+    {
+      "id": "quest-001",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Finde die Passwortdatei",
+      "description": "Im Verzeichnis /etc liegt eine Datei namens passwd. Finde sie mit ls.",
+      "hint": "Probier: ls /etc",
+      "goal": { "type": "output-contains", "command": "ls", "substring": "passwd" },
+      "xp": 10
+    },
+    {
+      "id": "quest-002",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Wo bin ich?",
+      "description": "Finde heraus, in welchem Verzeichnis du dich gerade befindest.",
+      "hint": "Der Befehl pwd zeigt das aktuelle Verzeichnis.",
+      "goal": { "type": "command-executed", "command": "pwd" },
+      "xp": 10
+    },
+    {
+      "id": "quest-003",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Platz für Projekte",
+      "description": "Erstelle in deinem Home-Verzeichnis einen Ordner namens 'mein-ordner'.",
+      "hint": "Der Befehl mkdir legt einen neuen Ordner an.",
+      "goal": { "type": "file-exists", "path": "/home/user/mein-ordner" },
+      "xp": 15
+    },
+    {
+      "id": "quest-004",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Lies deine Notizen",
+      "description": "In deinem Home-Verzeichnis liegt eine Datei notes.txt. Zeige ihren Inhalt an.",
+      "hint": "Der Befehl cat gibt den Inhalt einer Datei aus.",
+      "goal": { "type": "command-executed", "command": "cat", "args": ["notes.txt"] },
+      "xp": 15
+    },
+    {
+      "id": "quest-005",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Finde root",
+      "description": "In /etc/passwd ist ein Eintrag für den Benutzer root. Zeige ihn an.",
+      "hint": "Schau dir /etc/passwd mit cat an und finde die Zeile, die mit 'root:' beginnt.",
+      "goal": { "type": "output-contains", "substring": "root:x:0:0" },
+      "xp": 20
+    },
+    {
+      "id": "quest-006",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Was für eine Datei?",
+      "description": "Finde heraus, welchen Typ die Datei /etc/hosts hat.",
+      "hint": "Der Befehl file zeigt den Typ einer Datei.",
+      "goal": { "type": "command-executed", "command": "file", "args": ["/etc/hosts"] },
+      "xp": 10
+    },
+    {
+      "id": "quest-007",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Zeig mir alle Befehle",
+      "description": "Verschaffe dir einen Überblick über alle verfügbaren Befehle.",
+      "hint": "Der Befehl help zeigt dir alle Befehle.",
+      "goal": { "type": "command-executed", "command": "help" },
+      "xp": 10
+    },
+    {
+      "id": "quest-008",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Was habe ich getan?",
+      "description": "Zeige deine bisherige Befehlshistorie an.",
+      "hint": "Der Befehl history zeigt deine letzten Befehle.",
+      "goal": { "type": "command-executed", "command": "history" },
+      "xp": 10
+    },
+    {
+      "id": "quest-009",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Aufräumen",
+      "description": "Leere den Bildschirm, wenn es zu voll wird.",
+      "hint": "Der Befehl clear räumt den Bildschirm auf.",
+      "goal": { "type": "command-executed", "command": "clear" },
+      "xp": 5
+    },
+    {
+      "id": "quest-010",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Neue leere Datei",
+      "description": "Erstelle eine leere Datei unter /tmp/neu.txt.",
+      "hint": "Der Befehl touch erstellt leere Dateien.",
+      "goal": { "type": "command-executed", "command": "touch", "args": ["/tmp/neu.txt"] },
+      "xp": 10
+    },
+    {
+      "id": "quest-011",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Sag hallo",
+      "description": "Gib mit echo den Text 'hallo' aus.",
+      "hint": "Probier: echo hallo",
+      "goal": { "type": "output-contains", "command": "echo", "substring": "hallo" },
+      "xp": 10
+    },
+    {
+      "id": "quest-012",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "In eine Datei schreiben",
+      "description": "Schreibe 'hi' in die Datei /tmp/greeting.txt.",
+      "hint": "Mit echo hi > /tmp/greeting.txt schreibst du Text in eine Datei.",
+      "goal": { "type": "file-exists", "path": "/tmp/greeting.txt" },
+      "xp": 15
+    },
+    {
+      "id": "quest-013",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Wer bin ich?",
+      "description": "Finde heraus, als welcher Benutzer du angemeldet bist.",
+      "hint": "Der Befehl whoami zeigt deinen Benutzernamen.",
+      "goal": { "type": "command-executed", "command": "whoami" },
+      "xp": 10
+    },
+    {
+      "id": "quest-014",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Wie spät ist es?",
+      "description": "Zeige das aktuelle Datum und Uhrzeit an.",
+      "hint": "Der Befehl date zeigt Datum und Uhrzeit.",
+      "goal": { "type": "command-executed", "command": "date" },
+      "xp": 10
+    },
+    {
+      "id": "quest-015",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Welches System?",
+      "description": "Zeige an, welches Betriebssystem läuft.",
+      "hint": "Der Befehl uname zeigt Systeminformationen.",
+      "goal": { "type": "command-executed", "command": "uname" },
+      "xp": 10
+    },
+    {
+      "id": "quest-016",
+      "module": "basics",
+      "difficulty": "easy",
+      "title": "Wo liegt ls?",
+      "description": "Finde heraus, wo der Befehl ls liegt.",
+      "hint": "Der Befehl which zeigt den Pfad eines Befehls.",
+      "goal": { "type": "command-executed", "command": "which", "args": ["ls"] },
+      "xp": 10
+    },
+    {
+      "id": "quest-017",
+      "module": "files",
+      "difficulty": "easy",
+      "title": "Ordner für Aufgaben",
+      "description": "Lege einen Ordner 'aufgaben' in deinem Home an.",
+      "hint": "mkdir /home/user/aufgaben",
+      "goal": { "type": "file-exists", "path": "/home/user/aufgaben" },
+      "xp": 15
+    },
+    {
+      "id": "quest-018",
+      "module": "files",
+      "difficulty": "easy",
+      "title": "Kopie anlegen",
+      "description": "Kopiere /etc/hosts nach /tmp/kopie.txt.",
+      "hint": "Der Befehl cp kopiert Dateien: cp /etc/hosts /tmp/kopie.txt",
+      "goal": { "type": "file-exists", "path": "/tmp/kopie.txt" },
+      "xp": 15
+    },
+    {
+      "id": "quest-019",
+      "module": "files",
+      "difficulty": "easy",
+      "title": "Weg damit",
+      "description": "Lösche die Datei /tmp/neu.txt (falls sie existiert, erstelle sie mit touch).",
+      "hint": "Der Befehl rm löscht Dateien.",
+      "goal": { "type": "command-executed", "command": "rm", "args": ["/tmp/neu.txt"] },
+      "xp": 15
+    },
+    {
+      "id": "quest-020",
+      "module": "files",
+      "difficulty": "easy",
+      "title": "Umbenennen",
+      "description": "Benenne /tmp/kopie.txt in /tmp/umbenannt.txt um.",
+      "hint": "mv /tmp/kopie.txt /tmp/umbenannt.txt",
+      "goal": { "type": "file-exists", "path": "/tmp/umbenannt.txt" },
+      "xp": 15
+    },
+    {
+      "id": "quest-021",
+      "module": "explore",
+      "difficulty": "easy",
+      "title": "Baumansicht",
+      "description": "Zeige die Struktur von /etc als Baum an.",
+      "hint": "Der Befehl tree zeigt Verzeichnisse als Baum.",
+      "goal": { "type": "command-executed", "command": "tree", "args": ["/etc"] },
+      "xp": 15
+    },
+    {
+      "id": "quest-022",
+      "module": "explore",
+      "difficulty": "easy",
+      "title": "Versteckte Schätze",
+      "description": "Zeige auch die versteckten Dateien in deinem Home an.",
+      "hint": "ls -a zeigt auch Dateien, die mit '.' beginnen.",
+      "goal": { "type": "command-executed", "command": "ls", "args": ["-a", "/home/user"] },
+      "xp": 15
+    },
+    {
+      "id": "quest-023",
+      "module": "text",
+      "difficulty": "medium",
+      "title": "Erste Zeile",
+      "description": "Zeige die erste Zeile von /etc/passwd an.",
+      "hint": "head -n N DATEI zeigt die ersten N Zeilen.",
+      "goal": { "type": "command-executed", "command": "head", "args": ["-n", "1", "/etc/passwd"] },
+      "xp": 15
+    },
+    {
+      "id": "quest-024",
+      "module": "text",
+      "difficulty": "medium",
+      "title": "Letzte Zeile",
+      "description": "Zeige die letzte Zeile von /etc/passwd an.",
+      "hint": "tail -n N DATEI zeigt die letzten N Zeilen.",
+      "goal": { "type": "command-executed", "command": "tail", "args": ["-n", "1", "/etc/passwd"] },
+      "xp": 15
+    },
+    {
+      "id": "quest-025",
+      "module": "text",
+      "difficulty": "medium",
+      "title": "Zeilen zählen",
+      "description": "Zähle die Zeilen in /etc/passwd.",
+      "hint": "wc -l DATEI zählt die Zeilen.",
+      "goal": { "type": "command-executed", "command": "wc", "args": ["-l", "/etc/passwd"] },
+      "xp": 20
+    },
+    {
+      "id": "quest-026",
+      "module": "text",
+      "difficulty": "medium",
+      "title": "Sortieren",
+      "description": "Sortiere die Zeilen von /etc/passwd alphabetisch.",
+      "hint": "Der Befehl sort sortiert Zeilen.",
+      "goal": { "type": "command-executed", "command": "sort", "args": ["/etc/passwd"] },
+      "xp": 20
+    },
+    {
+      "id": "quest-027",
+      "module": "text",
+      "difficulty": "medium",
+      "title": "Rückwärts",
+      "description": "Gib 'hallo' rückwärts aus, indem du echo und rev mit einer Pipe verbindest.",
+      "hint": "Mit | verbindest du Befehle: echo hallo | rev",
+      "goal": {
+        "type": "command-executed",
+        "pipeline": [
+          { "command": "echo", "args": ["hallo"] },
+          { "command": "rev" }
+        ]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-028",
+      "module": "search",
+      "difficulty": "medium",
+      "title": "Groß oder klein?",
+      "description": "Suche in /etc/passwd nach 'ROOT' ohne auf Groß-/Kleinschreibung zu achten.",
+      "hint": "grep -i ignoriert Groß-/Kleinschreibung.",
+      "goal": { "type": "command-executed", "command": "grep", "args": ["-i", "ROOT", "/etc/passwd"] },
+      "xp": 15
+    },
+    {
+      "id": "quest-029",
+      "module": "search",
+      "difficulty": "medium",
+      "title": "Alles außer root",
+      "description": "Zeige alle Zeilen aus /etc/passwd, die NICHT 'root' enthalten.",
+      "hint": "grep -v kehrt den Match um.",
+      "goal": { "type": "command-executed", "command": "grep", "args": ["-v", "root", "/etc/passwd"] },
+      "xp": 20
+    },
+    {
+      "id": "quest-030",
+      "module": "search",
+      "difficulty": "medium",
+      "title": "Wie viele root?",
+      "description": "Zähle die Zeilen in /etc/passwd, die 'root' enthalten.",
+      "hint": "grep -c zählt die matchenden Zeilen.",
+      "goal": { "type": "command-executed", "command": "grep", "args": ["-c", "root", "/etc/passwd"] },
+      "xp": 20
+    },
+    {
+      "id": "quest-031",
+      "module": "search",
+      "difficulty": "medium",
+      "title": "Finde hosts",
+      "description": "Finde die Datei namens 'hosts' unter /etc.",
+      "hint": "find /etc -name hosts",
+      "goal": { "type": "command-executed", "command": "find", "args": ["/etc", "-name", "hosts"] },
+      "xp": 20
+    },
+    {
+      "id": "quest-032",
+      "module": "search",
+      "difficulty": "medium",
+      "title": "Nur Dateien",
+      "description": "Zeige alle Dateien (keine Ordner) unter /etc.",
+      "hint": "find /etc -type f",
+      "goal": { "type": "command-executed", "command": "find", "args": ["/etc", "-type", "f"] },
+      "xp": 25
+    },
+    {
+      "id": "quest-033",
+      "module": "pipes",
+      "difficulty": "medium",
+      "title": "Sortiertes Verzeichnis",
+      "description": "Liste /etc auf und sortiere die Ausgabe.",
+      "hint": "ls /etc | sort",
+      "goal": {
+        "type": "command-executed",
+        "pipeline": [
+          { "command": "ls", "args": ["/etc"] },
+          { "command": "sort" }
+        ]
+      },
+      "xp": 20
+    },
+    {
+      "id": "quest-034",
+      "module": "pipes",
+      "difficulty": "medium",
+      "title": "In Datei schreiben",
+      "description": "Schreibe 'x' in die Datei /tmp/x.txt (überschreibe sie).",
+      "hint": "echo x > /tmp/x.txt",
+      "goal": {
+        "type": "command-executed",
+        "command": "echo",
+        "args": ["x"],
+        "redirects": [{ "op": ">", "target": "/tmp/x.txt" }]
+      },
+      "xp": 20
+    },
+    {
+      "id": "quest-035",
+      "module": "pipes",
+      "difficulty": "medium",
+      "title": "An Datei anhängen",
+      "description": "Hänge 'y' an /tmp/x.txt an (die Datei existiert aus der vorigen Quest).",
+      "hint": "echo y >> /tmp/x.txt (zwei Größer-Zeichen für Append)",
+      "goal": {
+        "type": "command-executed",
+        "command": "echo",
+        "args": ["y"],
+        "redirects": [{ "op": ">>", "target": "/tmp/x.txt" }]
+      },
+      "xp": 20
+    },
+    {
+      "id": "quest-036",
+      "module": "pipes",
+      "difficulty": "medium",
+      "title": "Pipe mit grep",
+      "description": "Zeige mit cat und grep (per Pipe) nur die root-Zeile aus /etc/passwd.",
+      "hint": "cat /etc/passwd | grep root",
+      "goal": {
+        "type": "command-executed",
+        "pipeline": [
+          { "command": "cat", "args": ["/etc/passwd"] },
+          { "command": "grep", "args": ["root"] }
+        ]
+      },
+      "xp": 20
+    },
+    {
+      "id": "quest-037",
+      "module": "pipes",
+      "difficulty": "medium",
+      "title": "Zahlen in Datei und auf Bildschirm",
+      "description": "Gib 1 bis 3 aus und schreibe sie gleichzeitig in /tmp/seq.txt.",
+      "hint": "seq 3 | tee /tmp/seq.txt",
+      "goal": {
+        "type": "command-executed",
+        "pipeline": [
+          { "command": "seq", "args": ["3"] },
+          { "command": "tee", "args": ["/tmp/seq.txt"] }
+        ]
+      },
+      "xp": 20
+    },
+    {
+      "id": "quest-038",
+      "module": "text-processing",
+      "difficulty": "hard",
+      "title": "Ersetze root",
+      "description": "Ersetze in /etc/passwd alle Vorkommen von 'root' durch 'admin' (nur Ausgabe).",
+      "hint": "sed 's/alt/neu/g' DATEI ersetzt alle Vorkommen pro Zeile.",
+      "goal": {
+        "type": "command-executed",
+        "command": "sed",
+        "args": ["s/root/admin/g", "/etc/passwd"]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-039",
+      "module": "text-processing",
+      "difficulty": "hard",
+      "title": "In-place ändern",
+      "description": "Ersetze in /home/user/notes.txt den Text 'Meine Notizen' durch 'Geänderte Notizen' und speichere die Datei.",      "hint": "sed -i 's/alt/neu/' DATEI ändert die Datei direkt.",
+      "goal": {
+        "type": "command-executed",
+        "command": "sed",
+        "args": ["-i", "s/Meine Notizen/Geänderte Notizen/", "/home/user/notes.txt"]      
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-040",
+      "module": "text-processing",
+      "difficulty": "hard",
+      "title": "Nur Benutzernamen",
+      "description": "Zeige nur das erste Doppelpunkt-getrennte Feld jeder Zeile aus /etc/passwd.",
+      "hint": "cut -d : -f 1 DATEI schneidet das erste Feld aus.",
+      "goal": {
+        "type": "command-executed",
+        "command": "cut",
+        "args": ["-d", ":", "-f", "1", "/etc/passwd"]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-041",
+      "module": "text-processing",
+      "difficulty": "hard",
+      "title": "Groß schreiben per Pipe",
+      "description": "Gib 'hello' komplett in Großbuchstaben aus, mit tr.",
+      "hint": "echo hello | tr a-z A-Z",
+      "goal": {
+        "type": "command-executed",
+        "pipeline": [
+          { "command": "echo", "args": ["hello"] },
+          { "command": "tr", "args": ["a-z", "A-Z"] }
+        ]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-042",
+      "module": "text-processing",
+      "difficulty": "hard",
+      "title": "Dreifach-Pipe",
+      "description": "Aus /etc/passwd: filtere die root-Zeile und zeige nur den Benutzernamen.",
+      "hint": "cat /etc/passwd | grep root | cut -d : -f 1",
+      "goal": {
+        "type": "command-executed",
+        "pipeline": [
+          { "command": "cat", "args": ["/etc/passwd"] },
+          { "command": "grep", "args": ["root"] },
+          { "command": "cut", "args": ["-d", ":", "-f", "1"] }
+        ]
+      },
+      "xp": 40
+    },
+    {
+      "id": "quest-043",
+      "module": "filesystem",
+      "difficulty": "hard",
+      "title": "Symbolischer Link",
+      "description": "Erstelle einen symbolischen Link /tmp/hosts-link auf /etc/hosts.",
+      "hint": "ln -s ZIEL LINK_NAME",
+      "goal": {
+        "type": "command-executed",
+        "command": "ln",
+        "args": ["-s", "/etc/hosts", "/tmp/hosts-link"]
+      },
+      "xp": 25
+    },
+    {
+      "id": "quest-044",
+      "module": "filesystem",
+      "difficulty": "hard",
+      "title": "Nur für mich lesbar",
+      "description": "Setze die Berechtigungen von /etc/hosts auf 600 (nur Eigentümer lesen/schreiben).",
+      "hint": "chmod MODE DATEI",
+      "goal": {
+        "type": "command-executed",
+        "command": "chmod",
+        "args": ["600", "/etc/hosts"]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-045",
+      "module": "filesystem",
+      "difficulty": "hard",
+      "title": "Datei-Details",
+      "description": "Zeige die Metadaten von /etc/passwd an.",
+      "hint": "stat DATEI zeigt Größe, Modus, Zeiten.",
+      "goal": {
+        "type": "command-executed",
+        "command": "stat",
+        "args": ["/etc/passwd"]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-046",
+      "module": "filesystem",
+      "difficulty": "hard",
+      "title": "Nur der Name ohne Endung",
+      "description": "Zeige den Dateinamen von /home/user/notes.txt ohne die Endung '.txt' an.",
+      "hint": "basename PFAD SUFFIX entfernt den Suffix.",
+      "goal": {
+        "type": "command-executed",
+        "command": "basename",
+        "args": ["/home/user/notes.txt", ".txt"]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-047",
+      "module": "filesystem",
+      "difficulty": "hard",
+      "title": "Nur der Ordner",
+      "description": "Zeige den Ordner an, in dem /etc/passwd liegt.",
+      "hint": "dirname PFAD zeigt den Ordnerpfad.",
+      "goal": {
+        "type": "command-executed",
+        "command": "dirname",
+        "args": ["/etc/passwd"]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-048",
+      "module": "detect",
+      "difficulty": "hard",
+      "title": "Was ist /etc?",
+      "description": "Finde heraus, welchen Typ /etc hat.",
+      "hint": "file PFAD erkennt den Typ.",
+      "goal": {
+        "type": "command-executed",
+        "command": "file",
+        "args": ["/etc"]
+      },
+      "xp": 25
+    },
+    {
+      "id": "quest-049",
+      "module": "detect",
+      "difficulty": "hard",
+      "title": "Nur die erste Ebene",
+      "description": "Zeige den Verzeichnisbaum von /home/user, aber nur eine Ebene tief.",
+      "hint": "tree -L N PFAD begrenzt die Tiefe.",
+      "goal": {
+        "type": "command-executed",
+        "command": "tree",
+        "args": ["-L", "1", "/home/user"]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-050",
+      "module": "detect",
+      "difficulty": "hard",
+      "title": "Finde und filtere",
+      "description": "Finde in /etc alle Dateien, deren Name mit 'pass' beginnt.",
+      "hint": "find /etc -name 'pass*' -type f kombiniert zwei Filter.",
+      "goal": {
+        "type": "command-executed",
+        "command": "find",
+        "args": ["/etc", "-name", "pass*", "-type", "f"]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-051",
+      "module": "detect",
+      "difficulty": "hard",
+      "title": "Lange Liste",
+      "description": "Zeige /etc im Langformat (mit Berechtigungen und Größen).",
+      "hint": "ls -l /etc",
+      "goal": {
+        "type": "command-executed",
+        "command": "ls",
+        "args": ["-l", "/etc"]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-052",
+      "module": "detect",
+      "difficulty": "hard",
+      "title": "Zählen mit zwei Werten",
+      "description": "Zähle die Zeilen UND Wörter in /etc/passwd in einem Aufruf.",
+      "hint": "wc -lw DATEI gibt beide Werte aus.",
+      "goal": {
+        "type": "command-executed",
+        "command": "wc",
+        "args": ["-lw", "/etc/passwd"]
+      },
+      "xp": 30
+    }
+  ]
+}

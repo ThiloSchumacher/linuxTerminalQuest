@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tests — BashQuest</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-panel: #1e293b;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --pass: #4ade80;
+      --fail: #f87171;
+      --suite: #60a5fa;
+      --summary-ok: #22c55e;
+      --summary-fail: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    body { padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+    header h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+    header .meta { color: var(--muted); font-size: 0.875rem; }
+    #results { display: flex; flex-direction: column; gap: 0.25rem; }
+    .suite {
+      color: var(--suite);
+      font-weight: 600;
+      margin-top: 1rem;
+      padding-top: 0.5rem;
+      border-top: 1px dashed var(--border);
+    }
+    .suite:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+    .test { padding-left: 1.5rem; }
+    .pass { color: var(--pass); }
+    .fail { color: var(--fail); }
+    .fail .detail {
+      display: block;
+      padding-left: 1.25rem;
+      color: var(--muted);
+      font-size: 0.875em;
+      white-space: pre-wrap;
+    }
+    #summary {
+      margin-top: 2rem;
+      padding: 1rem 1.25rem;
+      border-radius: 6px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      font-size: 1rem;
+      font-weight: 600;
+      display: none;
+    }
+    #summary.visible { display: block; }
+    #summary.ok { border-color: var(--summary-ok); color: var(--summary-ok); }
+    #summary.bad { border-color: var(--summary-fail); color: var(--summary-fail); }
+    #summary small { display: block; color: var(--muted); font-weight: 400; margin-top: 0.25rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BashQuest — Test Runner</h1>
+    <span class="meta" id="meta">lädt…</span>
+  </header>
+
+  <div id="results"></div>
+  <div id="summary"></div>
+
+  <!--
+    Test-Runner (Framework: describe/it/expect) — MUSS zuerst geladen werden.
+    Alle Suites importieren describe/it/expect von hier.
+  -->
+  <script type="module" src="runner.js"></script>
+
+  <!--
+    Test-Suites. Reihenfolge egal, aber alle MÜSSEN importiert werden.
+    Wenn eine Datei noch nicht existiert, kommentiere sie aus — der
+    Rest läuft trotzdem.
+  -->
+  <script type="module" src="suites/vfs.test.js"></script>
+  <script type="module" src="suites/parser.test.js"></script>
+  <script type="module" src="suites/executor.test.js"></script>
+  <script type="module" src="suites/commands.test.js"></script>
+  <script type="module" src="suites/line-editor.test.js"></script>
+  <script type="module" src="suites/terminal.test.js"></script>
+  <script type="module" src="suites/quests.test.js"></script>
+  <script type="module" src="suites/validator.test.js"></script>
+  <script type="module" src="suites/quest-panel.test.js"></script>
+  <script type="module" src="suites/xp.test.js"></script>
+  <script type="module" src="suites/badges.test.js"></script>
+  <script type="module" src="suites/notifications.test.js"></script>
+  <script type="module" src="suites/sidebar.test.js"></script>
+  <script type="module" src="suites/serialize.test.js"></script>
+  <script type="module" src="suites/executer.test.js"></script>
+  <script type="module" src="suites/sw.test.js"></script>
+  <script type="module" src="suites/manifest.test.js"></script>
+
+</body>
+</html>

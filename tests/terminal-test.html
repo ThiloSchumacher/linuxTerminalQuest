@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Terminal Test — BashQuest</title>
+  <!-- Absolute Pfade ab Server-Root, damit die Datei in jedem Unterordner funktioniert. -->
+  <link rel="stylesheet" href="/vendor/xterm/xterm.css">
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #0f172a; }
+    #terminal { width: 100%; height: 100vh; padding: 8px; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <div id="terminal"></div>
+
+  <!-- xterm.js als UMD — klassische Scripts, in dieser Reihenfolge, BEIDE vor dem Modul. -->
+  <script src="/vendor/xterm/xterm.js"></script>
+  <script src="/vendor/xterm/addons/addon-fit.js"></script>
+
+  <!-- App-Code als ES-Modul; importiert die anderen Module über absolute Pfade. -->
+  <script type="module">
+    import { TerminalUI } from '/js/terminal/terminal.js';
+    import { Executor } from '/js/shell/executor.js';
+    import { Env } from '/js/shell/env.js';
+    import { LineEditor } from '/js/terminal/line-editor.js';
+    import { createCommandRegistry } from '/js/shell/commands/index.js';
+    import { createInitialFS } from '/js/vfs/initial-fs.js';
+
+    const vfs = createInitialFS();
+    const env = new Env({
+      PWD: '/home/user', OLDPWD: '/home/user', HOME: '/home/user',
+      USER: 'user', SHELL: '/bin/bash',
+      PATH: '/usr/local/bin:/usr/bin:/bin', '?': '0',
+    });
+    const executor = new Executor({ vfs, env, registry: createCommandRegistry() });
+    const lineEditor = new LineEditor({ historyLimit: 100 });
+
+    const prompt = () => {
+      const user = env.get('USER') || 'user';
+      const pwd = env.get('PWD') || '/';
+      const shown = pwd === '/home/user'
+        ? '~'
+        : pwd.startsWith('/home/user/')
+          ? '~' + pwd.slice('/home/user'.length)
+          : pwd;
+      return `\x1b[32m${user}\x1b[0m@\x1b[32mbashquest\x1b[0m:` +
+             `\x1b[34m${shown}\x1b[0m$ `;
+    };
+
+    const ui = new TerminalUI({
+      container: document.getElementById('terminal'),
+      executor, env, lineEditor, prompt,
+    });
+    ui.mount();
+    window.__terminalUI = ui;
+  </script>
+</body>
+</html>

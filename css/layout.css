@@ -1,0 +1,102 @@
+/* =============================================================
+   BashQuest — layout.css
+   Flex layout: content column (quest panel + terminal) on the
+   left, sidebar (fixed 260px) on the right. On mobile (<768px)
+   the sidebar becomes a right-side overlay toggled via
+   #sidebar-toggle.
+
+   Sizing (#main height, #terminal-container flex/padding) lives
+   only here so main.css carries no competing declarations.
+   The sidebar's outer border lives here too (layout concern,
+   per spec005d Patch 1 §4.1) — not in sidebar.css.
+
+   Known a11y note (V1, deferred to a future accessibility spec):
+   `flex-direction: row-reverse` flips the VISUAL axis but NOT the
+   DOM/tab order. The sidebar is still first in tab order and in
+   screen-reader reading order despite appearing on the right. This
+   was accepted as a V1 trade-off because (a) the toggle button is
+   the only focusable element inside the sidebar, and (b) fixing the
+   order requires either DOM reordering (conflicts with spec005d §5,
+   which pins the #sidebar-before-#content DOM order) or explicit
+   tabindex management (out of scope for V1). Do NOT "fix" this by
+   changing the flex direction back to `row` without also updating
+   spec005d §5 and the manual checklist in §Manuelle Test-Checkliste
+   (which verifies the sidebar position visually — the only
+   end-to-end check of the layout).
+   ============================================================= */
+
+html,
+body {
+  height: 100%;
+}
+
+#main {
+  /* 100vh is the fallback; 100dvh overrides in browsers that support
+     dynamic viewport units (mobile keyboard / URL-bar aware). */
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  /* Sidebar sits visually to the RIGHT of the content. `row-reverse`
+     keeps the DOM order (sidebar first, content second) intact — the
+     spec005d §5 structure — while flipping the visual axis. See the
+     a11y note in the file header for the trade-off. */
+  flex-direction: row-reverse;
+}
+
+#sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  /* All four sides are declared here — not just border-left — so the
+     `border: 0` reset in sidebar.css remains literally true: no
+     competing border rule in sidebar.css can take effect on any side,
+     because layout.css loads after sidebar.css (via main.css) and
+     wins the cascade for every border property. Only the LEFT side
+     (facing the content) is visible; the other three are explicitly
+     `none`. Using `none` uniformly (not `0` / `none` mixed) keeps the
+     intent of the four-side declaration visible at a glance — see
+     spec005d Patch 1 §4.1. */
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  border-left: 1px solid #1e293b;
+}
+
+#content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#terminal-container {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px;
+  /* Safe-area inset for notched devices; fallback 0px where unsupported. */
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Breakpoint note: spec005d Patch 1 §4.2 uses `max-width: 767px`; this
+   file uses `767.98px`. Semantically identical (both only match below
+   768px), but `767.98px` follows the Bootstrap convention and avoids
+   rounding glitches at fractional pixel widths (e.g. 767.5px in
+   DevTools device emulation). If a future spec needs strict 767px,
+   change both here and in css/sidebar.css together. */
+@media (max-width: 767.98px) {
+  #sidebar {
+    position: fixed;
+    top: 0;
+    /* Sidebar slides in from the right edge. Closed state is off-screen
+       via translateX(100%); .sidebar--open pulls it back to translateX(0). */
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+    transform: translateX(100%);
+    transition: transform 0.2s ease;
+  }
+
+  #sidebar.sidebar--open {
+    transform: translateX(0);
+  }
+}

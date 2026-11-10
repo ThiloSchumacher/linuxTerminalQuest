@@ -1,0 +1,40 @@
+/* =============================================================
+   BashQuest — terminal.css
+   xterm.js integration, scrollbar styling, mobile tweaks.
+   ============================================================= */
+
+/* xterm fills its container. The padding gives the character grid a
+   small inset from the container edge. */
+#terminal-container .xterm {
+  height: 100%;
+  width: 100%;
+  padding: 4px;
+}
+
+/* Scrollbar — Firefox syntax */
+#terminal-container .xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+
+/* Scrollbar — Chromium/WebKit */
+#terminal-container .xterm-viewport::-webkit-scrollbar {
+  width: 8px;
+}
+#terminal-container .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+#terminal-container .xterm-viewport::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+/* Mobile: tighter padding around the terminal so more columns fit
+   on narrow screens. fontSize stays at 14 (set in theme.js) —
+   xterm does not scale well and shrinking text hurts readability. */
+@media (max-width: 600px) {
+  #terminal-container {
+    padding: 4px;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+  }
+}

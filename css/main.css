@@ -1,0 +1,56 @@
+/* =============================================================
+   BashQuest — main.css
+   Reset, font faces, theme tokens, base typography.
+   Layout rules live in layout.css; terminal rules live in
+   terminal.css. Keeping them separate prevents the classic cascade
+   trap where a later layout file silently overrides a value from
+   this one.
+   Colour tokens mirror js/terminal/theme.js — that file is the
+   single source of truth for xterm colours; this file only
+   duplicates values for HTML chrome.
+   ============================================================= */
+
+@import url('./quests.css');
+@import url('./gamification.css');
+@import url('./sidebar.css');
+
+/* --- Theme tokens ----------------------------------------- */
+:root {
+  --bg: #0f172a;
+  --fg: #e2e8f0;
+  --accent: #4ade80;
+  --muted: #94a3b8;
+}
+
+/* --- Reset + base typography (single rule for html, body) --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* --- Font faces -------------------------------------------- */
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/InterVariable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('../fonts/JetBrainsMono-Variable.woff2') format('woff2');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}

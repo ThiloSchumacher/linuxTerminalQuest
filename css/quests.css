@@ -1,0 +1,73 @@
+/* =============================================================
+   BashQuest — quests.css
+   Narrow banner above the terminal. Theme-consistent with main.css;
+   imported from main.css via @import (spec005b §9).
+   ============================================================= */
+
+#quest-panel {
+  padding: 12px 16px;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.quest-panel__title {
+  font-weight: 600;
+  color: #4ade80;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.quest-panel__desc {
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  margin-bottom: 4px;
+}
+
+.quest-panel__hint {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.quest-panel--done .quest-panel__title {
+  color: #fbbf24;
+}
+
+/* Difficulty badge inside the panel title (spec012d §5.2). Sits at
+   the end of `.quest-panel__title` with an inline-block layout so
+   it can carry padding/border without breaking the title's line
+   flow. Same colour triple as the sidebar variant — visual parity
+   across the two surfaces is intentional. */
+.quest-panel__difficulty {
+  display: inline-block;
+  margin-left: 8px;
+  min-width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 0 6px;
+  vertical-align: middle;
+}
+
+.quest-panel__difficulty--easy {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.quest-panel__difficulty--medium {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.quest-panel__difficulty--hard {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}

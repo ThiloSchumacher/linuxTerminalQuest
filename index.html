@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>BashQuest</title>
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <link rel="stylesheet" href="vendor/xterm/xterm.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/terminal.css">
+</head>
+<body>
+  <button id="sidebar-toggle" aria-label="Sidebar umschalten">☰</button>
+
+  <div id="main">
+    <aside id="sidebar"></aside>
+    <div id="content">
+      <section id="quest-panel"></section>
+      <section id="terminal-container"></section>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!--
+    xterm.js is UMD, not ESM. Classic <script> tags, loaded BEFORE the
+    module script, so window.Terminal / window.FitAddon exist when
+    app.js runs.
+  -->
+  <script src="vendor/xterm/xterm.js"></script>
+  <script src="vendor/xterm/addons/addon-fit.js"></script>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
