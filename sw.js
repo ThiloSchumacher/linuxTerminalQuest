@@ -56,7 +56,7 @@
  * @module sw
  */
 
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const CACHE_NAME = 'bashquest-' + CACHE_VERSION;
 
 // Every asset the app loads at runtime. If a file is added to the

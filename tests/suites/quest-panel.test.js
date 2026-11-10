@@ -160,3 +160,75 @@ describe('QuestPanel — lifecycle', () => {
     expect(called).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// QuestPanel — nach solveQuest + refresh (spec013c)
+// ---------------------------------------------------------------------------
+
+describe('QuestPanel — nach solveQuest + refresh', () => {
+  it('re-renders the new active quest after solveQuest + refresh', () => {
+    const container = document.createElement('section');
+    document.body.appendChild(container);
+    try {
+      const quests = [
+        { id: 'quest-001', title: 'Q1', description: 'D1', hint: 'H1', goal: { type: 'command-executed', command: 'pwd' }, xp: 10, module: 'basics', difficulty: 'easy' },
+        { id: 'quest-002', title: 'Q2', description: 'D2', hint: 'H2', goal: { type: 'command-executed', command: 'pwd' }, xp: 10, module: 'basics', difficulty: 'easy' },
+        { id: 'quest-003', title: 'Q3', description: 'D3', hint: 'H3', goal: { type: 'command-executed', command: 'pwd' }, xp: 10, module: 'basics', difficulty: 'easy' },
+      ];
+      const engine = new QuestEngine(quests);
+      const panel = new QuestPanel({ container, questEngine: engine });
+
+      panel.mount();
+      expect(
+        container.querySelector('.quest-panel__title').textContent.includes('Quest 1:'),
+      ).toBe(true);
+      expect(
+        container.querySelector('.quest-panel__title').textContent.includes('Q1'),
+      ).toBe(true);
+
+      engine.solveQuest('quest-001');
+      panel.refresh();
+
+      const title = container.querySelector('.quest-panel__title').textContent;
+      expect(title.includes('Quest 1:')).toBe(false);
+      expect(title.includes('Quest 2:')).toBe(true);
+      expect(title.includes('Q2')).toBe(true);
+      expect(container.querySelector('.quest-panel__desc').textContent).toBe('D2');
+    } finally {
+      if (container.parentNode) container.parentNode.removeChild(container);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// QuestPanel — externe State-Änderung vor mount (spec013c)
+// ---------------------------------------------------------------------------
+
+describe('QuestPanel — externe State-Änderung vor mount', () => {
+  it('reads the active quest at mount() time, not at construction time', () => {
+    const container = document.createElement('section');
+    document.body.appendChild(container);
+    try {
+      const quests = [
+        { id: 'quest-001', title: 'Q1', description: 'D1', hint: 'H1', goal: { type: 'command-executed', command: 'pwd' }, xp: 10, module: 'basics', difficulty: 'easy' },
+        { id: 'quest-002', title: 'Q2', description: 'D2', hint: 'H2', goal: { type: 'command-executed', command: 'pwd' }, xp: 10, module: 'basics', difficulty: 'easy' },
+        { id: 'quest-003', title: 'Q3', description: 'D3', hint: 'H3', goal: { type: 'command-executed', command: 'pwd' }, xp: 10, module: 'basics', difficulty: 'easy' },
+      ];
+      const engine = new QuestEngine(quests);
+      // Solve BEFORE the panel is constructed — simulates the
+      // restoreQuests() → panel.mount() ordering in production
+      // (spec013c boot order).
+      engine.solveQuest('quest-001');
+
+      const panel = new QuestPanel({ container, questEngine: engine });
+      panel.mount();
+
+      const title = container.querySelector('.quest-panel__title').textContent;
+      expect(title.includes('Quest 1:')).toBe(false);
+      expect(title.includes('Quest 2:')).toBe(true);
+      expect(title.includes('Q2')).toBe(true);
+    } finally {
+      if (container.parentNode) container.parentNode.removeChild(container);
+    }
+  });
+});

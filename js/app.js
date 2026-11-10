@@ -86,6 +86,11 @@ function buildPrompt(env) {
  *     because both share a save timestamp.
  *   - `restoreQuests` MUST run before `xpTracker` / `badgeTracker`
  *     creation, so the derived totals see the full solved state.
+ *   - `restoreQuests` MUST ALSO run before `panel.mount()` — otherwise
+ *     the panel renders the empty engine (quest-001 active) and never
+ *     re-renders. The sidebar, mounted later, sees the correct
+ *     post-restore state; that divergence is spec013c's bug ("panel
+ *     shows Quest 1, sidebar shows Quest 1 as solved").
  *   - The initial save runs INSIDE the `.then` block, AFTER
  *     `restoreQuests` and `restoreVFS`, so a fresh boot never
  *     overwrites previously-saved data with an empty engine.
@@ -245,11 +250,22 @@ function boot() {
         container: panelEl,
         questEngine,
       });
-      panel.mount();
+      // NOTE: panel.mount() is intentionally NOT called here. It must
+      // run AFTER restoreQuests so that the panel's first render
+      // reflects the restored state. See spec013c.
 
-      // Persistence ordering (spec006a §4):
-      // 1. Restore solved quests BEFORE deriving XP/badges.
+      // Persistence ordering (spec006a §4 + spec013c):
+      // 1. Restore solved quests BEFORE mounting the panel and BEFORE
+      //    deriving XP/badges. Otherwise the panel's first `refresh()`
+      //    reads the empty engine (`quest-001` active) and never
+      //    re-renders — while the sidebar, mounted later, sees the
+      //    correct post-restore state. That divergence is exactly the
+      //    "panel shows Quest 1, sidebar shows Quest 1 as solved" bug.
       restoreQuests(storage, questEngine);
+
+      // Now mount the panel — `mount()` calls `refresh()`, which calls
+      // `getActiveQuest()` fresh from the engine.
+      panel.mount();
 
       // 2. Derive XP (NOT persisted, computed from solved quests).
       xpTracker = new XP(deriveXp(questEngine));
@@ -284,6 +300,17 @@ function boot() {
       // dirty-flag optimisation if the VFS grows beyond V1 scale.
       saveAppState(storage, { env, lineEditor, questEngine, vfs });
 
+      // spec013c §Zusätzliche Absicherung: one final `panel.refresh()`
+      // after the boot sequence completes. `panel.mount()` above
+      // already rendered against the restored engine, so this is
+      // belt-and-braces — if a future refactor moves `panel.mount()`
+      // back above `restoreQuests`, this call still forces a correct
+      // re-render. No `sidebar.refresh()` here: `sidebar.mount()`
+      // was called immediately above and nothing between then and
+      // now mutates engine/XP/badge state, so the sidebar's render
+      // is already current.
+      panel.refresh();
+
       /** @type {any} */ (window).__quests = questEngine;
     })
     .catch((err) => {
@@ -305,47 +332,41 @@ if (document.readyState === 'loading') {
 }
 
 // --- Service Worker ---
-// Aktiviert in spec013a. Fehler werden still geschluckt — die App
-// funktioniert auch ohne SW (dann ohne Offline-Cache).
 //
-// Der Pfad './sw.js' ist RELATIV (nicht '/sw.js'): er bindet den
-// SW-Scope an die URL von index.html. Auf einer GitHub-Pages-
-// Projekt-Seite (user.github.io/repo/) ergibt das einen Scope von
-// /repo/ — absolut '/sw.js' würde dort mit SecurityError
-// ("scope not allowed") scheitern. Bitte nicht auf einen absoluten
-// Pfad ändern.
-if ('serviceWorker' in navigator) {
-  // Reload at most ONCE per SW takeover. Two guards combine:
-  //
-  //  1. `hadController` (captured once, at module load): if the page
-  //     had NO controller before, this is the first-ever install.
-  //     The page was already served fresh from the network, so a
-  //     reload would just flash the UI without benefit.
-  //
-  //  2. `sessionStorage` flag: survives reloads. If we've already
-  //     reloaded for the current takeover, don't reload again. This
-  //     breaks out of any potential loop, even if the browser
-  //     somehow fires controllerchange more often than expected.
-  const hadController = !!navigator.serviceWorker.controller;
-  const RELOAD_FLAG = 'bashquest-sw-reloaded';
+// Registered in PRODUCTION only. In local development the SW causes
+// endless cache-invalidation pain: every code change requires a
+// manual `about:serviceworkers`-deregistration or a CACHE_VERSION
+// bump, and Firefox's controllerchange race means the update often
+// doesn't reach the page anyway. None of that matters for
+// development; the SW's value is offline capability, which we test
+// against GitHub Pages, not against Live Server on 127.0.0.1.
+//
+// The path `'./sw.js'` is RELATIVE (not `/sw.js`): it binds the SW
+// scope to the URL of index.html. On a GitHub-Pages project page
+// (`user.github.io/repo/`) that yields a scope of `/repo/` — an
+// absolute `/sw.js` would fail there with a SecurityError ("scope
+// not allowed"). Do not change to an absolute path.
+//
+// `updateViaCache: 'none'` forces the browser to bypass its HTTP
+// cache when checking sw.js for updates. Without it, Firefox (and
+// Safari, and some Chrome configurations) may serve the OLD sw.js
+// from the HTTP cache during the update check — meaning a new
+// CACHE_VERSION is never seen, and users stay on the old
+// bashquest-vX cache indefinitely.
+//
+// No `controllerchange`-triggered reload is needed: the SW uses
+// network-first for the app shell (spec013a review round), so an
+// ordinary page reload after a deploy pulls the fresh app.js / CSS /
+// quests.json from the server. The reload-loop that a
+// controllerchange handler once caused is structurally avoided.
+const isDev =
+  location.hostname === 'localhost' ||
+  location.hostname === '127.0.0.1' ||
+  location.hostname === '';
 
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    // Guard 1: first-ever control — nothing to reload for.
-    if (!hadController) return;
-    // Guard 2: already reloaded this session — break any loop.
-    if (sessionStorage.getItem(RELOAD_FLAG) === '1') return;
-
-    sessionStorage.setItem(RELOAD_FLAG, '1');
-    window.location.reload();
-  });
-
+if ('serviceWorker' in navigator && !isDev) {
   navigator.serviceWorker.register('./sw.js', {
     updateViaCache: 'none',
-  }).then(() => {
-    // Allow a future takeover (weeks later, after another deploy) to
-    // trigger a fresh reload. 5 s is plenty: an update either fires
-    // controllerchange within the current tick or not at all.
-    setTimeout(() => sessionStorage.removeItem(RELOAD_FLAG), 5000);
   }).catch(() => {
     // silent
   });
