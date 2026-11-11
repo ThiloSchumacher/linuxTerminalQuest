@@ -48,6 +48,8 @@
 const ALLOWED_GOAL_TYPES = Object.freeze([
   'command-executed',
   'file-exists',
+  'file-mode',
+  'file-owner',
   'output-contains',
 ]);
 
@@ -151,6 +153,48 @@ export function validateQuest(quest, index) {
   } else if (goal.type === 'file-exists') {
     if (typeof goal.path !== 'string' || goal.path.length === 0) {
       fail('goal.path', 'goal.path must be a non-empty string');
+    }
+  } else if (goal.type === 'file-mode') {
+    // spec014b §1: mode is stored as an integer in JSON (e.g. 384
+    // for 0o600 — JSON has no octal literals). Range 0..0o7777
+    // covers permission bits plus setuid/setgid/sticky, matching the
+    // VFS.chmod validation.
+    if (typeof goal.path !== 'string' || goal.path.length === 0) {
+      fail('goal.path', 'goal.path must be a non-empty string');
+    }
+    if (
+      !Number.isInteger(goal.mode) ||
+      goal.mode < 0 ||
+      goal.mode > 0o7777
+    ) {
+      fail(
+        'goal.mode',
+        'goal.mode must be an integer between 0 and 0o7777 (4095)',
+      );
+    }
+  } else if (goal.type === 'file-owner') {
+    // spec014b §1: owner and group are both optional, but at least
+    // one must be set — otherwise the goal would always be solved on
+    // any existing file, which is never the intent of a quest.
+    if (typeof goal.path !== 'string' || goal.path.length === 0) {
+      fail('goal.path', 'goal.path must be a non-empty string');
+    }
+    const hasOwner = isProvided(goal.owner);
+    const hasGroup = isProvided(goal.group);
+    if (!hasOwner && !hasGroup) {
+      fail('goal.owner', 'file-owner requires at least one of owner or group');
+    }
+    if (
+      hasOwner &&
+      (typeof goal.owner !== 'string' || goal.owner.length === 0)
+    ) {
+      fail('goal.owner', 'goal.owner must be a non-empty string');
+    }
+    if (
+      hasGroup &&
+      (typeof goal.group !== 'string' || goal.group.length === 0)
+    ) {
+      fail('goal.group', 'goal.group must be a non-empty string');
     }
   } else if (goal.type === 'output-contains') {
     if (typeof goal.substring !== 'string' || goal.substring.length === 0) {

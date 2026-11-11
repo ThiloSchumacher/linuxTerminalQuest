@@ -56,7 +56,7 @@
  * @module sw
  */
 
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v10';
 const CACHE_NAME = 'bashquest-' + CACHE_VERSION;
 
 // Every asset the app loads at runtime. If a file is added to the
@@ -111,6 +111,7 @@ const PRECACHE_URLS = [
   './js/shell/commands/cp.js',
   './js/shell/commands/mv.js',
   './js/shell/commands/chmod.js',
+  './js/shell/commands/chown.js',
   './js/shell/commands/grep.js',
   './js/shell/commands/head.js',
   './js/shell/commands/tail.js',

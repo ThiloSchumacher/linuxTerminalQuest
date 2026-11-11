@@ -704,6 +704,61 @@ export class VFS {
     node.ctime = Date.now();
   }
 
+  /**
+   * Change the owner and/or group of a node, FOLLOWING symlinks
+   * (spec014a §1). Sibling of `chmod` above — same follow semantics,
+   * same `ctime` bump, but with two independent fields instead of one
+   * numeric mode.
+   *
+   * At least one of `owner` / `group` must be provided (i.e. not
+   * `null` / `undefined`); passing both as `null` raises `EINVAL`.
+   * Passing `null` for the field that should stay unchanged is the
+   * caller's way to say "only touch the other field". This mirrors
+   * POSIX `chown` where `chown user file` leaves the group alone.
+   *
+   * ## No permission checks (V1)
+   *
+   * Real Linux `chown` requires root (CAP_CHOWN). This app has no
+   * permission model at all (spec001.1 §C — deliberate V1
+   * simplification), so `chown` mutates metadata unconditionally,
+   * exactly like `chmod` does.
+   *
+   * ## Error attribution
+   *
+   * Resolution goes through `_resolveOrRethrow`, so an `ENOENT` /
+   * `ELOOP` from `resolve` is re-attributed to `path` and
+   * `syscall='chown'` — NOT the internal `'resolve'`. That matches the
+   * VFS convention used by `delete`, `move`, `copy` and friends.
+   *
+   * @param {string} path
+   * @param {string|null} owner  New owner, or `null` to leave unchanged.
+   * @param {string|null} group  New group, or `null` to leave unchanged.
+   * @param {string} [cwd='/']
+   * @returns {void}
+   * @throws {Error} EINVAL (no field provided, or non-string / empty
+   *   string field), ENOENT, ELOOP — with `.path=path`,
+   *   `.syscall='chown'`.
+   */
+  chown(path, owner, group, cwd = '/') {
+    const ownerSet = owner !== null && owner !== undefined;
+    const groupSet = group !== null && group !== undefined;
+    if (!ownerSet && !groupSet) {
+      throw fsError('EINVAL', path, 'chown');
+    }
+    if (ownerSet && (typeof owner !== 'string' || owner === '')) {
+      throw fsError('EINVAL', path, 'chown');
+    }
+    if (groupSet && (typeof group !== 'string' || group === '')) {
+      throw fsError('EINVAL', path, 'chown');
+    }
+    this._validatePath(path);
+    const abs = this._normalize(path, cwd);
+    const node = this._resolveOrRethrow(abs, path, 'chown');
+    if (ownerSet) node.owner = owner;
+    if (groupSet) node.group = group;
+    node.ctime = Date.now();
+  }
+
   // ------------------------------------------------------------------
   // Helpers
   // ------------------------------------------------------------------

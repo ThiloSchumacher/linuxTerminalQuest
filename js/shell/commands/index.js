@@ -47,6 +47,7 @@ import { basename } from './basename.js';
 import { dirname } from './dirname.js';
 import { find } from './find.js';
 import { help } from './help.js';
+import { chown } from './chown.js';
 
 /**
  * Services passed to every command's `run()`.
@@ -160,6 +161,7 @@ export function createCommandRegistry() {
   add(dirname);
   add(find);
   add(help);
+  add(chown);
 
   return registry;
 }

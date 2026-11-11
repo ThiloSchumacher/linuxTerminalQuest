@@ -65,6 +65,10 @@ export class QuestValidator {
         return this._checkCommandExecuted(goal, input, result);
       case 'file-exists':
         return this._checkFileExists(goal);
+      case 'file-mode':
+        return this._checkFileMode(goal);
+      case 'file-owner':
+        return this._checkFileOwner(goal);
       case 'output-contains':
         return this._checkOutputContains(goal, input, result);
       default:
@@ -163,6 +167,60 @@ export class QuestValidator {
   _checkFileExists(goal) {
     const cwd = this._env.get('PWD') || '/';
     return this._vfs.exists(goal.path, cwd);
+  }
+
+  /**
+   * `file-mode` goal (spec014b §1): the node at `path` has exactly
+   * the expected numeric mode.
+   *
+   * Uses `lstat`, NOT `stat` — the goal describes the node itself
+   * (link metadata), not the target's. A broken symlink therefore
+   * still has a mode; a `stat` call would throw ENOENT on it. This
+   * matches the shell's `chmod` + `ls -l` semantics: `chmod` follows
+   * symlinks but `ls -l` on a link shows the LINK's mode.
+   *
+   * Missing path / ELOOP / EINVAL → `false`, not throw. A quest
+   * silently stays unsolved until the file exists; the UI has no
+   * error channel for "target missing during goal check", and the
+   * user can simply run the underlying command again.
+   *
+   * @param {object} goal
+   * @returns {boolean}
+   */
+  _checkFileMode(goal) {
+    const cwd = this._env.get('PWD') || '/';
+    let meta;
+    try {
+      meta = this._vfs.lstat(goal.path, cwd);
+    } catch {
+      return false;
+    }
+    return meta.mode === goal.mode;
+  }
+
+  /**
+   * `file-owner` goal (spec014b §1): the node at `path` has the
+   * expected owner and/or group.
+   *
+   * `owner` and `group` are both optional in the goal (validated at
+   * least one must be set — see loader.js). Fields that are `null` /
+   * `undefined` are wildcards (skipped). `lstat`, not `stat`: same
+   * link-vs-target reasoning as `_checkFileMode`.
+   *
+   * @param {object} goal
+   * @returns {boolean}
+   */
+  _checkFileOwner(goal) {
+    const cwd = this._env.get('PWD') || '/';
+    let meta;
+    try {
+      meta = this._vfs.lstat(goal.path, cwd);
+    } catch {
+      return false;
+    }
+    if (isProvided(goal.owner) && meta.owner !== goal.owner) return false;
+    if (isProvided(goal.group) && meta.group !== goal.group) return false;
+    return true;
   }
 
   /**

@@ -363,18 +363,18 @@ describe('loadQuests', () => {
 // data/quests.json — integration test on the real file (spec012c)
 // ---------------------------------------------------------------------------
 
-describe('data/quests.json — nach spec012c', () => {
+describe('data/quests.json — nach spec014b', () => {
   // Absolute URL computed from this module's URL, so the test works
   // regardless of where the project is served (local dev server,
   // GitHub Pages user/project site, custom domain).
   const QUESTS_URL = new URL('../../data/quests.json', import.meta.url).href;
 
-  it('loads 52 quests from the real file (22 easy + 15 medium + 15 hard)', async () => {
+  it('loads 58 quests from the real file (22 easy + 15 medium + 21 hard)', async () => {
     const quests = await loadQuests(QUESTS_URL);
-    expect(quests.length).toBe(52);
+    expect(quests.length).toBe(58);
   });
 
-  it('every quest has difficulty "easy", "medium", or "hard" (spec012c scope)', async () => {
+  it('every quest has difficulty "easy", "medium", or "hard"', async () => {
     const quests = await loadQuests(QUESTS_URL);
     expect(
       quests.every((q) => ['easy', 'medium', 'hard'].includes(q.difficulty)),
@@ -391,14 +391,24 @@ describe('data/quests.json — nach spec012c', () => {
     expect(mediumRange.every((q) => q.difficulty === 'medium')).toBe(true);
   });
 
-  it('quest-038 to quest-052 all have difficulty "hard"', async () => {
+  it('quest-038 to quest-058 all have difficulty "hard"', async () => {
     const quests = await loadQuests(QUESTS_URL);
     const hardRange = quests.filter((q) => {
       const n = parseInt(q.id.slice('quest-'.length), 10);
-      return n >= 38 && n <= 52;
+      return n >= 38 && n <= 58;
     });
-    expect(hardRange.length).toBe(15);
+    expect(hardRange.length).toBe(21);
     expect(hardRange.every((q) => q.difficulty === 'hard')).toBe(true);
+  });
+
+  it('quest-053 to quest-058 are in module "permissions"', async () => {
+    const quests = await loadQuests(QUESTS_URL);
+    const range = quests.filter((q) => {
+      const n = parseInt(q.id.slice('quest-'.length), 10);
+      return n >= 53 && n <= 58;
+    });
+    expect(range.length).toBe(6);
+    expect(range.every((q) => q.module === 'permissions')).toBe(true);
   });
 
   it('quest-005 is in basics (moved from text in spec012a)', async () => {
@@ -407,17 +417,17 @@ describe('data/quests.json — nach spec012c', () => {
     expect(q5.module).toBe('basics');
   });
 
-  it('all IDs are unique and follow the quest-NNN pattern (001..052)', async () => {
+  it('all IDs are unique and follow the quest-NNN pattern (001..058)', async () => {
     const quests = await loadQuests(QUESTS_URL);
     const ids = quests.map((q) => q.id);
-    expect(new Set(ids).size).toBe(52);
-    for (let i = 1; i <= 52; i++) {
+    expect(new Set(ids).size).toBe(58);
+    for (let i = 1; i <= 58; i++) {
       const expected = `quest-${String(i).padStart(3, '0')}`;
       expect(ids.includes(expected)).toBe(true);
     }
   });
 
-  it('module distribution matches spec012c (9 modules, total 52)', async () => {
+  it('module distribution matches spec014b (10 modules, total 58)', async () => {
     const quests = await loadQuests(QUESTS_URL);
     const counts = {};
     for (const q of quests) counts[q.module] = (counts[q.module] ?? 0) + 1;
@@ -430,27 +440,24 @@ describe('data/quests.json — nach spec012c', () => {
     expect(counts['text-processing']).toBe(5);
     expect(counts.filesystem).toBe(5);
     expect(counts.detect).toBe(5);
+    expect(counts.permissions).toBe(6);
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
-    expect(total).toBe(52);
+    expect(total).toBe(58);
   });
 
-  it('total XP across all quests is 1020 (spec012c: 270 + 300 + 450)', async () => {
-    // The spec's §2.4 breakdown: 22 easy = 270, 15 medium = 300,
-    // 15 hard = 450. The test computes the sum from the actual `xp`
+  it('total XP across all quests is 1225 (270 + 300 + 655)', async () => {
+    // The spec's §2 breakdown: 22 easy = 270, 15 medium = 300,
+    // 21 hard = 655. The test computes the sum from the actual `xp`
     // fields, not from a hard-coded list.
     const quests = await loadQuests(QUESTS_URL);
     const totalXP = quests.reduce((sum, q) => sum + q.xp, 0);
-    expect(totalXP).toBe(1020);
+    expect(totalXP).toBe(1225);
   });
 
-  it('per-difficulty XP sums: easy=270, medium=300, hard=450', async () => {
+  it('per-difficulty XP sums: easy=270, medium=300, hard=655', async () => {
     // Guard against unknown difficulty values before the `+=` so a
     // future quest with e.g. difficulty 'extreme' produces a clear
-    // diagnosis ("unexpected difficulty … on quest quest-NNN") instead
-    // of a silent NaN. The `every quest has difficulty …` test above
-    // catches the same condition, but its failure message is more
-    // generic and its execution order relative to this test is not
-    // guaranteed.
+    // diagnosis instead of a silent NaN.
     const quests = await loadQuests(QUESTS_URL);
     const sums = { easy: 0, medium: 0, hard: 0 };
     for (const q of quests) {
@@ -463,7 +470,7 @@ describe('data/quests.json — nach spec012c', () => {
     }
     expect(sums.easy).toBe(270);
     expect(sums.medium).toBe(300);
-    expect(sums.hard).toBe(450);
+    expect(sums.hard).toBe(655);
   });
 
   it('basics-complete is NOT unlocked after only quest-005 (1/16 basics)', async () => {
@@ -493,13 +500,13 @@ describe('data/quests.json — nach spec012c', () => {
     expect(unlockedIds.includes('all-quests')).toBe(false);
   });
 
-  it('deriveXp matches the true sum after solving every quest (1020 XP)', async () => {
+  it('deriveXp matches the true sum after solving every quest (1225 XP)', async () => {
     const quests = await loadQuests(QUESTS_URL);
     const engine = new QuestEngine(quests);
     for (const q of quests) {
       engine.solveQuest(q.id);
     }
-    expect(deriveXp(engine)).toBe(1020);
+    expect(deriveXp(engine)).toBe(1225);
   });
 });
 
@@ -1153,5 +1160,269 @@ describe('validateQuest — command-executed mit pipeline', () => {
       expect(err.path).toBe('quests[0].goal.pipeline');
       expect(err.message.includes('args must be an array of strings')).toBe(true);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateQuest — file-mode (spec014b §1)
+// ---------------------------------------------------------------------------
+
+describe('validateQuest — file-mode', () => {
+  it('accepts a valid file-mode goal', () => {
+    validateQuest(
+      makeQuest({
+        goal: { type: 'file-mode', path: '/etc/hosts', mode: 384 },
+      }),
+      0,
+    );
+  });
+
+  it('accepts mode = 0 (fully locked)', () => {
+    validateQuest(
+      makeQuest({ goal: { type: 'file-mode', path: '/etc/hosts', mode: 0 } }),
+      0,
+    );
+  });
+
+  it('accepts mode = 0o7777 (upper bound)', () => {
+    validateQuest(
+      makeQuest({
+        goal: { type: 'file-mode', path: '/etc/hosts', mode: 0o7777 },
+      }),
+      0,
+    );
+  });
+
+  it('rejects mode above 0o7777', () => {
+    expectThrowSync(
+      () => validateQuest(
+        makeQuest({
+          goal: { type: 'file-mode', path: '/etc/hosts', mode: 0o10000 },
+        }),
+        0,
+      ),
+      'EQUEST_INVALID',
+      'quests[0].goal.mode',
+    );
+  });
+
+  it('rejects non-integer mode (1.5)', () => {
+    expectThrowSync(
+      () => validateQuest(
+        makeQuest({
+          goal: { type: 'file-mode', path: '/etc/hosts', mode: 1.5 },
+        }),
+        0,
+      ),
+      'EQUEST_INVALID',
+      'quests[0].goal.mode',
+    );
+  });
+
+  it('rejects negative mode', () => {
+    expectThrowSync(
+      () => validateQuest(
+        makeQuest({ goal: { type: 'file-mode', path: '/etc/hosts', mode: -1 } }),
+        0,
+      ),
+      'EQUEST_INVALID',
+      'quests[0].goal.mode',
+    );
+  });
+
+  it('rejects a missing path', () => {
+    expectThrowSync(
+      () => validateQuest(
+        makeQuest({ goal: { type: 'file-mode', mode: 384 } }),
+        0,
+      ),
+      'EQUEST_INVALID',
+      'quests[0].goal.path',
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateQuest — file-owner (spec014b §1)
+// ---------------------------------------------------------------------------
+
+describe('validateQuest — file-owner', () => {
+  it('accepts an owner-only goal', () => {
+    validateQuest(
+      makeQuest({
+        goal: { type: 'file-owner', path: '/etc/hosts', owner: 'user' },
+      }),
+      0,
+    );
+  });
+
+  it('accepts a group-only goal', () => {
+    validateQuest(
+      makeQuest({
+        goal: { type: 'file-owner', path: '/etc/hosts', group: 'root' },
+      }),
+      0,
+    );
+  });
+
+  it('accepts owner + group together', () => {
+    validateQuest(
+      makeQuest({
+        goal: {
+          type: 'file-owner',
+          path: '/etc/hosts',
+          owner: 'user',
+          group: 'user',
+        },
+      }),
+      0,
+    );
+  });
+
+  it('rejects a goal with neither owner nor group', () => {
+    expectThrowSync(
+      () => validateQuest(
+        makeQuest({ goal: { type: 'file-owner', path: '/etc/hosts' } }),
+        0,
+      ),
+      'EQUEST_INVALID',
+      'quests[0].goal.owner',
+    );
+  });
+
+  it('rejects a missing path', () => {
+    expectThrowSync(
+      () => validateQuest(
+        makeQuest({ goal: { type: 'file-owner', owner: 'user' } }),
+        0,
+      ),
+      'EQUEST_INVALID',
+      'quests[0].goal.path',
+    );
+  });
+
+  it('rejects a non-string owner', () => {
+    expectThrowSync(
+      () => validateQuest(
+        makeQuest({
+          goal: { type: 'file-owner', path: '/etc/hosts', owner: 42 },
+        }),
+        0,
+      ),
+      'EQUEST_INVALID',
+      'quests[0].goal.owner',
+    );
+  });
+
+  it('rejects an empty-string owner', () => {
+    expectThrowSync(
+      () => validateQuest(
+        makeQuest({
+          goal: { type: 'file-owner', path: '/etc/hosts', owner: '' },
+        }),
+        0,
+      ),
+      'EQUEST_INVALID',
+      'quests[0].goal.owner',
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// data/quests.json — neue permissions Quests (spec014b §2)
+// ---------------------------------------------------------------------------
+
+describe('data/quests.json — neue permissions Quests', () => {
+  const QUESTS_URL = new URL('../../data/quests.json', import.meta.url).href;
+
+  /**
+   * @param {string} id
+   * @returns {Promise<object>}
+   */
+  async function getQuest(id) {
+    const quests = await loadQuests(QUESTS_URL);
+    const q = quests.find((x) => x.id === id);
+    expect(q).toBeTruthy();
+    return q;
+  }
+
+  it('quest-053: command-executed chmod 600 /etc/hosts', async () => {
+    const q = await getQuest('quest-053');
+    expect(q.module).toBe('permissions');
+    expect(q.difficulty).toBe('hard');
+    expect(q.goal.type).toBe('command-executed');
+    expect(q.goal.command).toBe('chmod');
+    expect(q.goal.args).toEqual(['600', '/etc/hosts']);
+    expect(q.xp).toBe(30);
+  });
+
+  it('quest-054: file-mode /etc/hosts mode=384 (0o600)', async () => {
+    const q = await getQuest('quest-054');
+    expect(q.module).toBe('permissions');
+    expect(q.difficulty).toBe('hard');
+    expect(q.goal.type).toBe('file-mode');
+    expect(q.goal.path).toBe('/etc/hosts');
+    expect(q.goal.mode).toBe(384);
+    expect(q.xp).toBe(30);
+  });
+
+  it('quest-055: file-owner /etc/hosts owner=user', async () => {
+    const q = await getQuest('quest-055');
+    expect(q.module).toBe('permissions');
+    expect(q.difficulty).toBe('hard');
+    expect(q.goal.type).toBe('file-owner');
+    expect(q.goal.path).toBe('/etc/hosts');
+    expect(q.goal.owner).toBe('user');
+    expect(q.xp).toBe(30);
+  });
+
+  it('quest-056: file-owner /etc/hosts owner=user group=user', async () => {
+    const q = await getQuest('quest-056');
+    expect(q.module).toBe('permissions');
+    expect(q.difficulty).toBe('hard');
+    expect(q.goal.type).toBe('file-owner');
+    expect(q.goal.path).toBe('/etc/hosts');
+    expect(q.goal.owner).toBe('user');
+    expect(q.goal.group).toBe('user');
+    expect(q.xp).toBe(35);
+  });
+
+  it('quest-057: chmod 755 notes.txt | stat notes.txt (pipeline)', async () => {
+    const q = await getQuest('quest-057');
+    expect(q.module).toBe('permissions');
+    expect(q.difficulty).toBe('hard');
+    expect(q.goal.type).toBe('command-executed');
+    expect(q.goal.pipeline).toBeTruthy();
+    expect(q.goal.pipeline.length).toBe(2);
+    expect(q.goal.pipeline[0].command).toBe('chmod');
+    expect(q.goal.pipeline[0].args).toEqual(['755', '/home/user/notes.txt']);
+    expect(q.goal.pipeline[1].command).toBe('stat');
+    expect(q.goal.pipeline[1].args).toEqual(['/home/user/notes.txt']);
+    expect(q.xp).toBe(40);
+  });
+
+  it('quest-058: file-mode /home/user/projects mode=493 (0o755)', async () => {
+    // NOTE: `createInitialFS()` already sets /home/user/projects to
+    // 0o755. This quest is therefore solved the moment it becomes
+    // active — no user action required. Spec014b §2 specified 493
+    // explicitly; the reviewer (spec014b round) should decide
+    // whether to raise the goal (e.g. mode 448 = 0o700) so the user
+    // must actually run `chmod`. Pinned here to make any change
+    // visible as a diff in the test, not as a silent data update.
+    const q = await getQuest('quest-058');
+    expect(q.module).toBe('permissions');
+    expect(q.difficulty).toBe('hard');
+    expect(q.goal.type).toBe('file-mode');
+    expect(q.goal.path).toBe('/home/user/projects');
+    expect(q.goal.mode).toBe(493);
+    expect(q.xp).toBe(40);
+  });
+
+  it('permissions-module XP sum is 205 (30+30+30+35+40+40)', async () => {
+    const quests = await loadQuests(QUESTS_URL);
+    const perms = quests.filter((q) => q.module === 'permissions');
+    expect(perms.length).toBe(6);
+    const sum = perms.reduce((a, q) => a + q.xp, 0);
+    expect(sum).toBe(205);
   });
 });

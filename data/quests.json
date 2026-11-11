@@ -617,6 +617,93 @@
         "args": ["-lw", "/etc/passwd"]
       },
       "xp": 30
+    },
+    {
+      "id": "quest-053",
+      "module": "permissions",
+      "difficulty": "hard",
+      "title": "Datei absichern",
+      "description": "Setze die Rechte von /etc/hosts auf 600 (nur Eigentümer darf lesen und schreiben).",
+      "hint": "chmod MODE DATEI — 600 bedeutet rw-------",
+      "goal": {
+        "type": "command-executed",
+        "command": "chmod",
+        "args": ["600", "/etc/hosts"]
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-054",
+      "module": "permissions",
+      "difficulty": "hard",
+      "title": "Rechte prüfen",
+      "description": "Prüfe mit stat, ob /etc/hosts wirklich die Rechte 600 hat.",
+      "hint": "stat /etc/hosts zeigt Mode: 0600 (rw-------).",
+      "goal": {
+        "type": "file-mode",
+        "path": "/etc/hosts",
+        "mode": 384
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-055",
+      "module": "permissions",
+      "difficulty": "hard",
+      "title": "Besitzer wechseln",
+      "description": "Ändere den Besitzer von /etc/hosts auf 'user'.",
+      "hint": "chown user /etc/hosts",
+      "goal": {
+        "type": "file-owner",
+        "path": "/etc/hosts",
+        "owner": "user"
+      },
+      "xp": 30
+    },
+    {
+      "id": "quest-056",
+      "module": "permissions",
+      "difficulty": "hard",
+      "title": "Besitzer und Gruppe",
+      "description": "Setze Besitzer und Gruppe von /etc/hosts auf 'user:user'.",
+      "hint": "chown user:user /etc/hosts",
+      "goal": {
+        "type": "file-owner",
+        "path": "/etc/hosts",
+        "owner": "user",
+        "group": "user"
+      },
+      "xp": 35
+    },
+    {
+      "id": "quest-057",
+      "module": "permissions",
+      "difficulty": "hard",
+      "title": "Rechte setzen und prüfen",
+      "description": "Setze die Rechte von /home/user/notes.txt auf 755 und prüfe sie mit stat in einer Pipe.",
+      "hint": "chmod 755 DATEI | stat DATEI — beide in einer Pipe.",
+      "goal": {
+        "type": "command-executed",
+        "pipeline": [
+          { "command": "chmod", "args": ["755", "/home/user/notes.txt"] },
+          { "command": "stat", "args": ["/home/user/notes.txt"] }
+        ]
+      },
+      "xp": 40
+    },
+    {
+      "id": "quest-058",
+      "module": "permissions",
+      "difficulty": "hard",
+      "title": "Ordner-Rechte",
+      "description": "Setze die Rechte des Ordners /home/user/projects auf 700 (rwx------).",
+      "hint": "chmod 700 /home/user/projects — 448 im Dezimalsystem entspricht 0o700.",
+      "goal": {
+        "type": "file-mode",
+        "path": "/home/user/projects",
+        "mode": 448
+      },
+      "xp": 40
     }
   ]
 }
