@@ -18,6 +18,20 @@ import { mapFsError } from './commands/_helpers.js';
  * require a service must check and return a user-facing error). The
  * executor itself does not touch `services`.
  *
+ * ## Global `--help` (spec013c-fix §Bug C)
+ *
+ * When a command node's FIRST argument (`argv[1]`) is `--help` AND the
+ * command exists in the registry, `_runPipeline` short-circuits the
+ * command's `run()` and produces a synthetic result:
+ *
+ *   stdout: `${name}: ${description}\n\nVerwendung: ${usage}\n`,
+ *   stderr: '', exitCode: 0
+ *
+ * Subsequent pipeline/redirect handling runs normally — so
+ * `ls --help > help.txt` writes the help text, and `ls --help | grep Verwendung`
+ * filters it. Only `argv[1]` is checked: `echo foo --help` keeps
+ * `--help` as a normal text argument (spec013c-fix §Bug C, "Wichtig").
+ *
  * ## V1 redirect limitations (spec007b §5, unchanged by spec007c/009a)
  *
  * - At most ONE input redirect (`<`) and ONE output redirect
@@ -198,17 +212,34 @@ export class Executor {
         continue;
       }
 
-      // 3d. Run the command (with services).
+      // 3d. Run the command (with services). Global `--help`: if the
+      // FIRST argument is `--help`, emit a synthetic help result
+      // instead of calling `command.run()`. The check is `argv[1]`,
+      // NOT `argv.includes('--help')` — `echo foo --help` keeps
+      // `--help` as a literal text argument (spec013c-fix §Bug C).
+      // Redirects and pipes are handled afterwards normally, so
+      // `ls --help > help.txt` and `ls --help | grep Verwendung`
+      // both work.
       let result;
       try {
-        result = command.run({
-          argv: cmdNode.argv.slice(1),
-          name,
-          env: this.env,
-          vfs: this.vfs,
-          stdin: stdinValue,
-          services,
-        });
+        if (cmdNode.argv[1] === '--help') {
+          result = {
+            stdout:
+              `${command.name}: ${command.description}\n\n` +
+              `Verwendung: ${command.usage}\n`,
+            stderr: '',
+            exitCode: 0,
+          };
+        } else {
+          result = command.run({
+            argv: cmdNode.argv.slice(1),
+            name,
+            env: this.env,
+            vfs: this.vfs,
+            stdin: stdinValue,
+            services,
+          });
+        }
         if (
           !result ||
           typeof result.stdout !== 'string' ||
