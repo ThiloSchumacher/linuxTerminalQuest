@@ -611,3 +611,175 @@ describe('QuestValidator — command-executed mit pipeline', () => {
     expect(r.solved).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// QuestValidator — file-mode (spec014b §1)
+// ---------------------------------------------------------------------------
+
+describe('QuestValidator — file-mode', () => {
+  it('solves when the file exists with the expected mode', () => {
+    const { vfs, validator } = setup([
+      makeQuest({
+        goal: { type: 'file-mode', path: '/tmp/x', mode: 0o600 },
+      }),
+    ]);
+    vfs.createFile('/tmp/x', '/', '');
+    vfs.chmod('/tmp/x', 0o600, '/');
+    const r = validator.check('chmod 600 /tmp/x', okResult());
+    expect(r.solved).toBe(true);
+    expect(r.questId).toBe('quest-001');
+  });
+
+  it('does not solve when the mode differs', () => {
+    const { vfs, validator } = setup([
+      makeQuest({
+        goal: { type: 'file-mode', path: '/tmp/x', mode: 0o600 },
+      }),
+    ]);
+    vfs.createFile('/tmp/x', '/', '');
+    vfs.chmod('/tmp/x', 0o644, '/');
+    const r = validator.check('chmod 644 /tmp/x', okResult());
+    expect(r.solved).toBe(false);
+  });
+
+  it('does not solve and does not throw when the file is missing', () => {
+    const { validator } = setup([
+      makeQuest({
+        goal: { type: 'file-mode', path: '/tmp/missing', mode: 0o600 },
+      }),
+    ]);
+    const r = validator.check('chmod 600 /tmp/missing', okResult());
+    expect(r.solved).toBe(false);
+    expect(r.questId).toBe(null);
+  });
+
+  it('checks the link itself, not the target (lstat semantics)', () => {
+    const { vfs, validator } = setup([
+      makeQuest({
+        goal: { type: 'file-mode', path: '/tmp/l', mode: 0o777 },
+      }),
+    ]);
+    vfs.createSymlink('/etc/hosts', '/tmp/l', '/');
+    // The link node has mode 0o777 (VFS POSIX default for symlinks),
+    // /etc/hosts has 0o644. With `stat` the target (0o644) would be
+    // compared against 0o777 and fail; with `lstat` the link's mode
+    // matches.
+    const r = validator.check('ls -l /tmp/l', okResult());
+    expect(r.solved).toBe(true);
+  });
+
+  it('matches a freshly chmodded directory (0o755)', () => {
+    const { vfs, validator } = setup([
+      makeQuest({
+        goal: { type: 'file-mode', path: '/tmp/d', mode: 0o755 },
+      }),
+    ]);
+    vfs.createDir('/tmp/d', '/');
+    // createDir defaults to 0o755 — solved without an explicit chmod.
+    const r = validator.check('mkdir /tmp/d', okResult());
+    expect(r.solved).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// QuestValidator — file-owner (spec014b §1)
+// ---------------------------------------------------------------------------
+
+describe('QuestValidator — file-owner', () => {
+  it('solves when owner matches (group wildcard)', () => {
+    const { vfs, validator } = setup([
+      makeQuest({
+        goal: { type: 'file-owner', path: '/tmp/x', owner: 'user' },
+      }),
+    ]);
+    vfs.createFile('/tmp/x', '/', '');
+    vfs.chown('/tmp/x', 'user', null, '/');
+    const r = validator.check('chown user /tmp/x', okResult());
+    expect(r.solved).toBe(true);
+  });
+
+  it('does not solve when owner differs', () => {
+    const { vfs, validator } = setup([
+      makeQuest({
+        goal: { type: 'file-owner', path: '/tmp/x', owner: 'user' },
+      }),
+    ]);
+    vfs.createFile('/tmp/x', '/', '');
+    // Default owner is 'root' — not 'user'.
+    const r = validator.check('chown root /tmp/x', okResult());
+    expect(r.solved).toBe(false);
+  });
+
+  it('solves with owner + group both matching', () => {
+    const { vfs, validator } = setup([
+      makeQuest({
+        goal: {
+          type: 'file-owner',
+          path: '/tmp/x',
+          owner: 'user',
+          group: 'staff',
+        },
+      }),
+    ]);
+    vfs.createFile('/tmp/x', '/', '');
+    vfs.chown('/tmp/x', 'user', 'staff', '/');
+    const r = validator.check('chown user:staff /tmp/x', okResult());
+    expect(r.solved).toBe(true);
+  });
+
+  it('does not solve when only one of owner+group matches', () => {
+    const { vfs, validator } = setup([
+      makeQuest({
+        goal: {
+          type: 'file-owner',
+          path: '/tmp/x',
+          owner: 'user',
+          group: 'staff',
+        },
+      }),
+    ]);
+    vfs.createFile('/tmp/x', '/', '');
+    vfs.chown('/tmp/x', 'user', 'root', '/');
+    const r = validator.check('chown user:root /tmp/x', okResult());
+    expect(r.solved).toBe(false);
+  });
+
+  it('solves with group-only when only group is in the goal', () => {
+    const { vfs, validator } = setup([
+      makeQuest({
+        goal: { type: 'file-owner', path: '/tmp/x', group: 'staff' },
+      }),
+    ]);
+    vfs.createFile('/tmp/x', '/', '');
+    vfs.chown('/tmp/x', null, 'staff', '/');
+    const r = validator.check('chown :staff /tmp/x', okResult());
+    expect(r.solved).toBe(true);
+  });
+
+  it('does not solve and does not throw when the file is missing', () => {
+    const { validator } = setup([
+      makeQuest({
+        goal: { type: 'file-owner', path: '/tmp/missing', owner: 'user' },
+      }),
+    ]);
+    const r = validator.check('chown user /tmp/missing', okResult());
+    expect(r.solved).toBe(false);
+    expect(r.questId).toBe(null);
+  });
+
+  it('checks the link itself, not the target (lstat semantics)', () => {
+    const { vfs, validator } = setup([
+      makeQuest({
+        goal: { type: 'file-owner', path: '/tmp/l', owner: 'root' },
+      }),
+    ]);
+    vfs.createSymlink('/etc/hosts', '/tmp/l', '/');
+    // Chown the TARGET to 'user'. The link node's owner stays 'root'
+    // (inherited from /tmp). With `stat`, the target's 'user' would
+    // fail against goal.owner='root'; with `lstat` the link's 'root'
+    // matches.
+    vfs.chown('/etc/hosts', 'user', null, '/');
+    const r = validator.check('ls -l /tmp/l', okResult());
+    expect(r.solved).toBe(true);
+  });
+});

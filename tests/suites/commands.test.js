@@ -41,6 +41,7 @@ import { basename } from '../../js/shell/commands/basename.js';
 import { dirname } from '../../js/shell/commands/dirname.js';
 import { find } from '../../js/shell/commands/find.js';
 import { help } from '../../js/shell/commands/help.js';
+import { chown } from '../../js/shell/commands/chown.js';
 
 /**
  * Fresh vfs + env for one test.
@@ -4009,5 +4010,191 @@ describe('help — Sortierung', () => {
     expect(idxCat).toBeGreaterThan(idxBase);
     expect(idxLs).toBeGreaterThan(idxCat);
     expect(idxPwd).toBeGreaterThan(idxLs);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// chown (spec014a §2)
+// ---------------------------------------------------------------------------
+
+describe('chown', () => {
+  it('sets owner only (OWNER form), group unchanged', () => {
+    const { vfs, env } = setup();
+    vfs.createFile('/tmp/x', '/', '');
+    const before = vfs.lstat('/tmp/x', '/');
+    const r = chown.run({
+      argv: ['user', '/tmp/x'],
+      name: 'chown',
+      env,
+      vfs,
+    });
+    expect(r.exitCode).toBe(0);
+    expect(r.stderr).toBe('');
+    const after = vfs.lstat('/tmp/x', '/');
+    expect(after.owner).toBe('user');
+    // before.owner is 'root' (inherited from /tmp) — this assertion
+    // is not vacuous: without an actual change, `after.owner` would
+    // still be 'root'.
+    expect(after.group).toBe(before.group);
+  });
+
+  it('sets owner and group (OWNER:GROUP form)', () => {
+    const { vfs, env } = setup();
+    // Spec §4 names /etc/hosts, but its default group is already
+    // 'root', which would make the group-set path trivially pass.
+    // Use a fresh /tmp file and a non-default group so this test
+    // actually exercises the assignment.
+    vfs.createFile('/tmp/x', '/', '');
+    const r = chown.run({
+      argv: ['user:staff', '/tmp/x'],
+      name: 'chown',
+      env,
+      vfs,
+    });
+    expect(r.exitCode).toBe(0);
+    const after = vfs.lstat('/tmp/x', '/');
+    expect(after.owner).toBe('user');
+    expect(after.group).toBe('staff');
+  });
+
+  it('sets group only (:GROUP form), owner unchanged', () => {
+    const { vfs, env } = setup();
+    // Same reasoning as above: /etc/hosts is already owner='root',
+    // so `:root` on /etc/hosts would not prove "owner preserved".
+    // With a fresh /tmp file (owner='root' by default) and
+    // group='staff', both assertions are non-vacuous.
+    vfs.createFile('/tmp/x', '/', '');
+    const before = vfs.lstat('/tmp/x', '/');
+    expect(before.owner).toBe('root');
+    const r = chown.run({
+      argv: [':staff', '/tmp/x'],
+      name: 'chown',
+      env,
+      vfs,
+    });
+    expect(r.exitCode).toBe(0);
+    const after = vfs.lstat('/tmp/x', '/');
+    expect(after.group).toBe('staff');
+    expect(after.owner).toBe('root');
+  });
+
+  it('reports ENOENT for a missing file, exit 1', () => {
+    const { vfs, env } = setup();
+    const r = chown.run({
+      argv: ['user', '/nope'],
+      name: 'chown',
+      env,
+      vfs,
+    });
+    expect(r.exitCode).toBe(1);
+    expect(r.stderr.includes('chown: /nope: No such file or directory')).toBe(
+      true,
+    );
+  });
+
+  it('processes remaining files after one failure', () => {
+    const { vfs, env } = setup();
+    const r = chown.run({
+      argv: ['user', '/nope', '/etc/hosts'],
+      name: 'chown',
+      env,
+      vfs,
+    });
+    expect(r.exitCode).toBe(1);
+    expect(r.stderr.includes('/nope')).toBe(true);
+    expect(vfs.lstat('/etc/hosts', '/').owner).toBe('user');
+  });
+
+  it('missing operand → exit 1', () => {
+    const { vfs, env } = setup();
+    const r = chown.run({ argv: [], name: 'chown', env, vfs });
+    expect(r.exitCode).toBe(1);
+    expect(r.stderr).toBe('chown: missing operand\n');
+  });
+
+  it('missing file operand → exit 1', () => {
+    const { vfs, env } = setup();
+    const r = chown.run({ argv: ['user'], name: 'chown', env, vfs });
+    expect(r.exitCode).toBe(1);
+    expect(r.stderr).toBe('chown: missing file operand\n');
+  });
+
+  it("rejects unknown flags with exit 2", () => {
+    const { vfs, env } = setup();
+    const r = chown.run({
+      argv: ['-R', 'user', '/etc'],
+      name: 'chown',
+      env,
+      vfs,
+    });
+    expect(r.exitCode).toBe(2);
+    expect(r.stderr).toBe("chown: invalid option -- 'R'\n");
+  });
+
+  it("'user:' form sets owner only, group unchanged (colon present, group empty)", () => {
+    // Fourth valid spec form (documented in chown.js module JSDoc):
+    // colon present, group field empty. The `g === ''` branch of the
+    // parser must leave `group` as null so `vfs.chown` skips the
+    // group assignment. A refactor that changed
+    // `if (g !== '') group = g;` to `group = g;` would silently set
+    // group = '' and either crash in vfs.chown's validation or null
+    // out the group.
+    const { vfs, env } = setup();
+    vfs.createFile('/tmp/x', '/', '');
+    const before = vfs.lstat('/tmp/x', '/');
+    expect(before.owner).toBe('root');
+    const r = chown.run({
+      argv: ['user:', '/tmp/x'],
+      name: 'chown',
+      env,
+      vfs,
+    });
+    expect(r.exitCode).toBe(0);
+    expect(r.stderr).toBe('');
+    const after = vfs.lstat('/tmp/x', '/');
+    expect(after.owner).toBe('user');
+    expect(after.group).toBe(before.group);
+  });
+
+  it("empty spec with file operand ('' + file) is rejected as invalid spec", () => {
+    // NOTE on argv shape: `argv: ['']` ALONE would hit the
+    // "missing file operand" branch (argv.length === 1) BEFORE the
+    // spec-parse logic runs — that is already covered by the
+    // `['user']` test. To actually reach the `spec === ''` check in
+    // the `colonIdx === -1` branch, we need a file operand:
+    // `chown '' <file>` is the only invocation that exercises the
+    // empty-spec guard.
+    const { vfs, env } = setup();
+    vfs.createFile('/tmp/x', '/', '');
+    const r = chown.run({
+      argv: ['', '/tmp/x'],
+      name: 'chown',
+      env,
+      vfs,
+    });
+    expect(r.exitCode).toBe(1);
+    expect(r.stderr.includes('invalid spec')).toBe(true);
+    // Owner must remain unchanged — the invalid-spec guard fires
+    // before any vfs.chown call.
+    expect(vfs.lstat('/tmp/x', '/').owner).toBe('root');
+  });
+
+  it("':' spec with file operand is rejected as invalid spec", () => {
+    // Same ordering caveat as the '' test: `argv: [':']` alone hits
+    // "missing file operand". With a file operand, both `o` and `g`
+    // are empty (colon present, both sides empty), so the
+    // `o === '' && g === ''` guard fires — the command would be a
+    // no-op on every file, hence the explicit rejection.
+    const { vfs, env } = setup();
+    vfs.createFile('/tmp/x', '/', '');
+    const r = chown.run({
+      argv: [':', '/tmp/x'],
+      name: 'chown',
+      env,
+      vfs,
+    });
+    expect(r.exitCode).toBe(1);
+    expect(r.stderr.includes('invalid spec')).toBe(true);
+    expect(vfs.lstat('/tmp/x', '/').owner).toBe('root');
   });
 });

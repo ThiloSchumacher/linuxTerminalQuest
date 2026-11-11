@@ -432,3 +432,87 @@ describe('Node', () => {
     expect(node.children instanceof Map).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// VFS — chown (spec014a §1)
+// ---------------------------------------------------------------------------
+
+describe('VFS — chown', () => {
+  it('sets owner only, group unchanged', () => {
+    const vfs = makeFS();
+    vfs.createFile('/tmp/x', '/', '');
+    const before = vfs.lstat('/tmp/x', '/');
+    vfs.chown('/tmp/x', 'user', null, '/');
+    const after = vfs.lstat('/tmp/x', '/');
+    expect(after.owner).toBe('user');
+    expect(after.group).toBe(before.group);
+  });
+
+  it('sets group only, owner unchanged', () => {
+    const vfs = makeFS();
+    vfs.createFile('/tmp/x', '/', '');
+    const before = vfs.lstat('/tmp/x', '/');
+    vfs.chown('/tmp/x', null, 'staff', '/');
+    const after = vfs.lstat('/tmp/x', '/');
+    expect(after.group).toBe('staff');
+    expect(after.owner).toBe(before.owner);
+  });
+
+  it('sets both owner and group in one call', () => {
+    const vfs = makeFS();
+    vfs.createFile('/tmp/x', '/', '');
+    vfs.chown('/tmp/x', 'user', 'staff', '/');
+    const after = vfs.lstat('/tmp/x', '/');
+    expect(after.owner).toBe('user');
+    expect(after.group).toBe('staff');
+  });
+
+  it('rejects both-null with EINVAL', () => {
+    const vfs = makeFS();
+    vfs.createFile('/tmp/x', '/', '');
+    let caught = null;
+    try {
+      vfs.chown('/tmp/x', null, null, '/');
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught !== null).toBe(true);
+    expect(caught.code).toBe('EINVAL');
+    expect(caught.syscall).toBe('chown');
+  });
+
+  it('raises ENOENT with syscall="chown" on a missing path', () => {
+    const vfs = makeFS();
+    let caught = null;
+    try {
+      vfs.chown('/nope', 'user', null, '/');
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught !== null).toBe(true);
+    expect(caught.code).toBe('ENOENT');
+    expect(caught.syscall).toBe('chown');
+    expect(caught.path).toBe('/nope');
+  });
+
+  it('follows symlinks — chowns the target, not the link node', () => {
+    const vfs = makeFS();
+    vfs.createSymlink('/etc/hosts', '/tmp/l', '/');
+    vfs.chown('/tmp/l', 'user', null, '/');
+    // The link node is untouched (still a link); the TARGET's owner
+    // changed.
+    expect(vfs.lstat('/tmp/l', '/').type).toBe('link');
+    expect(vfs.lstat('/etc/hosts', '/').owner).toBe('user');
+  });
+
+  it('bumps ctime', () => {
+    const vfs = makeFS();
+    vfs.createFile('/tmp/x', '/', '');
+    const before = vfs.lstat('/tmp/x', '/').ctime;
+    vfs.chown('/tmp/x', 'user', null, '/');
+    const after = vfs.lstat('/tmp/x', '/').ctime;
+    // Millisecond Date.now() can produce equal values within one tick;
+    // `>=` is the correct assertion (strict `>` would flake).
+    expect(after >= before).toBe(true);
+  });
+});
