@@ -1,4 +1,5 @@
 import { difficultyLabel, difficultyAriaLabel } from './sidebar.js';
+import { getQuestCommands } from '../quests/commands-from-quest.js';
 
 /**
  * QuestPanel — narrow banner above the terminal showing the current quest.
@@ -22,6 +23,24 @@ import { difficultyLabel, difficultyAriaLabel } from './sidebar.js';
  * helpers live in `./sidebar.js` and are imported here to keep one
  * source of truth across the two UI modules. State B ("Alle Quests
  * gelöst!") renders NO badge.
+ *
+ * ## Collapsible hint (spec016b)
+ *
+ * The visible hint is now a compact one-line summary — a label
+ * ("Tipp:"), a command chip ("ls", "chmod, stat", or "?" when the
+ * quest exposes no command), and a small "»" toggle. Clicking the
+ * toggle reveals the full instructional sentence (the quest's `hint`
+ * field) in a detail block below; clicking again collapses it. The
+ * arrow rotates 90° via the `aria-expanded` attribute (CSS handles
+ * the visual transform).
+ *
+ * The toggle and detail elements are re-created on every `refresh()`
+ * because the panel rebuilds the whole DOM; the click listener dies
+ * with the discarded elements. No `removeEventListener` needed.
+ *
+ * Collapse state is NOT persisted across refreshes — a new active
+ * quest starts collapsed by design (see spec016b §2.4: "neue Quest =
+ * neuer Hinweis, kein altes Detail klebt").
  *
  * @module ui/quest-panel
  */
@@ -86,12 +105,10 @@ export class QuestPanel {
     title.textContent = `Quest ${idx}: ${active.title}`;
 
     // Difficulty badge (spec012d §4). Skipped for unknown difficulty so
-    // a malformed quest renders "title only". The visible gap between
-    // the title text and the chip is provided by
+    // a malformed quest renders "title only". The gap between title
+    // text and chip is provided by
     // `.quest-panel__difficulty { margin-left: 8px; }` (spec §5.2) —
-    // one source of spacing, not two. A JS-side `append(' ', badge)`
-    // would stack on top of that margin and exceed the "one space"
-    // the spec calls for (see review to spec012d, NICE 1).
+    // one source of spacing, not two.
     const diffLabel = difficultyLabel(active.difficulty);
     if (diffLabel !== null) {
       const badge = document.createElement('span');
@@ -110,12 +127,72 @@ export class QuestPanel {
     desc.textContent = active.description;
     panel.appendChild(desc);
 
-    const hint = document.createElement('div');
-    hint.className = 'quest-panel__hint';
-    hint.textContent = 'Tipp: ' + active.hint;
-    panel.appendChild(hint);
+    // --- hint area (spec016b §2.2) ----------------------------------
+    // Compact one-line view: label + command chip + toggle button.
+    // The full instructional sentence lives in the collapsed detail
+    // block below (hidden by default).
+    const commands = getQuestCommands(active);
+    const commandsText = commands.length > 0 ? commands.join(', ') : '?';
+
+    const hintRow = document.createElement('div');
+    hintRow.className = 'quest-panel__hint';
+
+    const hintLabel = document.createElement('span');
+    hintLabel.className = 'quest-panel__hint-label';
+    hintLabel.textContent = 'Tipp:';
+    hintRow.appendChild(hintLabel);
+
+    const hintCommands = document.createElement('span');
+    hintCommands.className = 'quest-panel__hint-commands';
+    hintCommands.textContent = commandsText;
+    hintRow.appendChild(hintCommands);
+
+    const toggle = document.createElement('button');
+    toggle.className = 'quest-panel__hint-toggle';
+    toggle.type = 'button';
+    toggle.setAttribute('aria-expanded', 'false');
+    // V1: fixed ID. Assumes a single QuestPanel instance in the DOM
+    // (true today — app.js creates exactly one). If a future round
+    // introduces a second panel (e.g. a preview in the sidebar), this
+    // ID — and the `detail.id` below — must become instance-specific
+    // (`quest-panel-hint-detail-${questId}` or an instance counter).
+    // The asymmetry is intentional for V1 readability: a fixed
+    // constant is easier to grep, and the alternative (generating a
+    // per-instance ID) would need a class-level counter just to
+    // support a scenario that does not exist. See review NICE 1 to
+    // spec016b.
+    toggle.setAttribute('aria-controls', 'quest-panel-hint-detail');
+
+    const arrow = document.createElement('span');
+    arrow.className = 'quest-panel__hint-arrow';
+    arrow.textContent = '»';
+    toggle.appendChild(arrow);
+    hintRow.appendChild(toggle);
+
+    panel.appendChild(hintRow);
+
+    const detail = document.createElement('div');
+    detail.className = 'quest-panel__hint-detail';
+    detail.id = 'quest-panel-hint-detail';
+    detail.hidden = true;
+    detail.textContent = active.hint;
+    panel.appendChild(detail);
 
     this._container.appendChild(panel);
+
+    // spec016b §2.3: click toggles the detail block and rotates the
+    // arrow. No listener cleanup needed — refresh() rebuilds the DOM
+    // entirely, so the listener dies with `toggle`.
+    toggle.addEventListener('click', () => {
+      const expanded = toggle.getAttribute('aria-expanded') === 'true';
+      if (expanded) {
+        detail.hidden = true;
+        toggle.setAttribute('aria-expanded', 'false');
+      } else {
+        detail.hidden = false;
+        toggle.setAttribute('aria-expanded', 'true');
+      }
+    });
   }
 
   /**

@@ -1,6 +1,9 @@
 import { describe, it, expect } from '../runner.js';
-import { validateQuest, loadQuests } from '../../js/quests/loader.js';
-import { QuestEngine } from '../../js/quests/quest-engine.js';
+import {
+  validateQuest,
+  loadQuests,
+  isProvided,
+} from '../../js/quests/loader.js';import { QuestEngine } from '../../js/quests/quest-engine.js';
 import { deriveXp, deriveBadges } from '../../js/storage/persistence.js';
 import { BadgeTracker } from '../../js/gamification/badges.js';
 
@@ -1424,5 +1427,137 @@ describe('data/quests.json — neue permissions Quests', () => {
     expect(perms.length).toBe(6);
     const sum = perms.reduce((a, q) => a + q.xp, 0);
     expect(sum).toBe(205);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateQuest — commands (spec016a §1)
+// ---------------------------------------------------------------------------
+
+describe('validateQuest — commands', () => {
+  it('accepts a valid commands array', () => {
+    validateQuest(makeQuest({ commands: ['mkdir'] }), 0);
+  });
+
+  it('accepts an empty commands array (no throw, no effect)', () => {
+    // `commands: []` is "provided but empty" — legal per spec016a §1.
+    // The helper treats it as "not set" and falls back to goal
+    // derivation; validation must not reject it.
+    validateQuest(makeQuest({ commands: [] }), 0);
+  });
+
+  it('rejects a string instead of an array', () => {
+    expectThrowSync(
+      () => validateQuest(makeQuest({ commands: 'mkdir' }), 0),
+      'EQUEST_INVALID',
+      'quests[0].commands',
+    );
+  });
+
+  it('rejects an array with a non-string element', () => {
+    expectThrowSync(
+      () => validateQuest(makeQuest({ commands: ['mkdir', 42] }), 0),
+      'EQUEST_INVALID',
+      'quests[0].commands',
+    );
+  });
+
+  it('rejects an array with a null element', () => {
+    expectThrowSync(
+      () => validateQuest(makeQuest({ commands: [null] }), 0),
+      'EQUEST_INVALID',
+      'quests[0].commands',
+    );
+  });
+
+  it('rejects an array with an empty-string element', () => {
+    // Symmetric to the non-string check above: `''` is a string but
+    // not a valid command name. The loader's inner check uses
+    // `cmd.length === 0` in the same condition as `typeof cmd !==
+    // 'string'`, so both fail with the same `.path`.
+    expectThrowSync(
+      () => validateQuest(makeQuest({ commands: [''] }), 0),
+      'EQUEST_INVALID',
+      'quests[0].commands',
+    );
+  });
+
+  it('accepts a quest with commands omitted', () => {
+    // No commands field — the base makeQuest fixture has none. This
+    // is the "derive from goal" path used by most quests.
+    validateQuest(makeQuest(), 0);
+  });
+
+  it('accepts commands: null as "absent" (null-as-absent convention)', () => {
+    // Consistent with the null-as-absent rule for all other optional
+    // fields: `commands: null` is a hand-written placeholder for "not
+    // set", not a schema error.
+    validateQuest(makeQuest({ commands: null }), 0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// data/quests.json — commands field (spec016a §3)
+// ---------------------------------------------------------------------------
+
+describe('data/quests.json — commands field', () => {
+  const QUESTS_URL = new URL('../../data/quests.json', import.meta.url).href;
+
+  // The authoritative map of quests that SHOULD have a commands
+  // field. Every other quest must NOT have one (derivation covers
+  // them). If a future round changes one entry, this test surfaces
+  // the diff, not a silent data update.
+  const EXPECTED = {
+    'quest-003': ['mkdir'],
+    'quest-005': ['cat', 'grep'],
+    'quest-017': ['mkdir'],
+    'quest-018': ['cp'],
+    'quest-019': ['rm'],
+    'quest-020': ['mv'],
+    'quest-054': ['chmod', 'stat'],
+    'quest-055': ['chown'],
+    'quest-056': ['chown'],
+    'quest-058': ['chmod'],
+  };
+
+  it('each of the 10 quests has the expected commands list', async () => {
+    const quests = await loadQuests(QUESTS_URL);
+    for (const [id, cmds] of Object.entries(EXPECTED)) {
+      const q = quests.find((x) => x.id === id);
+      expect(q).toBeTruthy();
+      expect(q.commands).toEqual(cmds);
+    }
+  });
+
+  it('every other quest has no PROVIDED commands field', async () => {
+    // Weaker than `toBe(undefined)` on purpose: the null-as-absent
+    // convention from loader.js treats `commands: null` as "not set",
+    // and spec016a §1 allows `commands: []` as a legal no-op. A
+    // future quest author who writes `commands: null` (per the
+    // convention) or `commands: []` (harmless placeholder) should not
+    // trip this test as a regression.
+    //
+    // `isProvided` is the same helper the validator and helper use —
+    // using it here aligns the test's notion of "set" with the
+    // production code's. A stray `commands: ['ls']` on a quest that
+    // is NOT in EXPECTED still fails, which is the actual thing this
+    // test should catch. See review NICE 3 to spec016a.
+    const quests = await loadQuests(QUESTS_URL);
+    const expectedIds = new Set(Object.keys(EXPECTED));
+    for (const q of quests) {
+      if (!expectedIds.has(q.id)) {
+        expect(isProvided(q.commands)).toBe(false);
+      }
+    }
+  });
+
+  it('quest total and XP sum are unchanged (58 quests, 1225 XP)', async () => {
+    // Guard against an accidental duplicate or missed quest entry in
+    // the 10-quest update. `reduce` over actual xp values, not a
+    // hard-coded list, per the project's testing convention.
+    const quests = await loadQuests(QUESTS_URL);
+    expect(quests.length).toBe(58);
+    const totalXP = quests.reduce((sum, q) => sum + q.xp, 0);
+    expect(totalXP).toBe(1225);
   });
 });

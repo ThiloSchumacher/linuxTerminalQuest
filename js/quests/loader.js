@@ -4,8 +4,9 @@
  * Reads a `quests.json`-shaped document (an object with a `quests` array),
  * validates every quest against the schema in spec005a §1 (+ spec012a
  * `difficulty`, + spec012b `goal.redirects` / `goal.pipeline`,
- * + spec014b `file-mode` / `file-owner`, + spec015b `file-not-exists`),
- * checks that all `id`s are unique, and returns the array.
+ * + spec014b `file-mode` / `file-owner`, + spec015b `file-not-exists`,
+ * + spec016a `commands`), checks that all `id`s are unique, and returns
+ * the array.
  *
  * No VFS, no DOM, no UI, no shell — this module is pure logic. `fetch`
  * is only used as the default value of the `fetchFn` parameter; callers
@@ -14,7 +15,8 @@
  * ## Null-as-absent convention
  *
  * Every optional quest field (`command`, `pipeline`, `redirects`,
- * `args`, and the per-stage `args`) uses a uniform rule:
+ * `args`, the per-stage `args`, and now `commands`) uses a uniform
+ * rule:
  *
  *     "provided" ⇔ value is neither `undefined` nor `null`.
  *
@@ -22,14 +24,17 @@
  * explicit placeholder for "not set" without triggering schema errors,
  * while `undefined` remains the standard default for omitted fields.
  * The rule is applied via the exported `isProvided` helper so it stays
- * visible at every use site (validator.js imports it). Required fields
- * (`redirect.op`, `redirect.target`, `pipeline[i].command`) do NOT
- * follow the rule — `null` there is a genuine schema error.
+ * visible at every use site (validator.js and commands-from-quest.js
+ * import it). Required fields (`redirect.op`, `redirect.target`,
+ * `pipeline[i].command`) do NOT follow the rule — `null` there is a
+ * genuine schema error.
  *
  * **Distinction from "empty":** to express "no redirects allowed
  * (strict)", use `redirects: []` — an empty array is a *provided*
  * value, so the multiset comparison runs against an empty expectation.
  * `redirects: null` means "not set" = wildcard (no redirect check).
+ * Same for `commands: []` — provided but empty, "no commands"; the
+ * helper falls back to goal derivation (spec016a §2).
  *
  * ## Error contract (spec005a §2 + spec012a §1 + spec012b §1)
  *
@@ -72,7 +77,8 @@ const ALLOWED_REDIRECT_OPS = Object.freeze(['>', '>>', '<']);
 /**
  * Test whether an optional field is "provided" per the null-as-absent
  * convention (see module JSDoc). Exported so `quests/validator.js`
- * uses the exact same rule — the convention is centralised here.
+ * and `quests/commands-from-quest.js` use the exact same rule — the
+ * convention is centralised here.
  *
  * @param {unknown} value
  * @returns {boolean}
@@ -82,7 +88,8 @@ export function isProvided(value) {
 }
 
 /**
- * Validate a single quest against the spec005a + spec012a + spec012b schema.
+ * Validate a single quest against the spec005a + spec012a + spec012b
+ * + spec014b + spec015b + spec016a schema.
  *
  * @param {unknown} quest
  * @param {number} index Used only to build the `.path` in error messages.
@@ -126,6 +133,28 @@ export function validateQuest(quest, index) {
   if (typeof quest.hint !== 'string' || quest.hint.length === 0) {
     fail('hint', 'hint must be a non-empty string');
   }
+
+  // spec016a §1: `commands` is an optional array of command names
+  // that the panel displays as a hint (spec016b renders it). When
+  // omitted, the list is DERIVED from the goal in
+  // `commands-from-quest.js` — so `undefined` and `null` both mean
+  // "no explicit commands". An empty array is technically "provided
+  // but empty"; the helper treats it as "not set" and falls through
+  // to goal derivation (§2 of spec016a), matching the same null-vs-
+  // empty reasoning used elsewhere. Entries must be non-empty
+  // strings; anything else (number, null, '') fails at load time so
+  // the panel never has to cope with an unrenderable command.
+  if (isProvided(quest.commands)) {
+    if (!Array.isArray(quest.commands)) {
+      fail('commands', 'commands must be an array of strings');
+    }
+    for (const cmd of quest.commands) {
+      if (typeof cmd !== 'string' || cmd.length === 0) {
+        fail('commands', 'commands must be an array of non-empty strings');
+      }
+    }
+  }
+
   if (typeof quest.difficulty !== 'string' || quest.difficulty.length === 0) {
     fail('difficulty', 'difficulty must be a non-empty string');
   }

@@ -27,6 +27,7 @@
       "title": "Platz für Projekte",
       "description": "Erstelle in deinem Home-Verzeichnis einen Ordner namens 'mein-ordner'.",
       "hint": "Der Befehl mkdir legt einen neuen Ordner an.",
+      "commands": ["mkdir"],
       "goal": { "type": "file-exists", "path": "/home/user/mein-ordner" },
       "xp": 15
     },
@@ -47,6 +48,7 @@
       "title": "Finde root",
       "description": "In /etc/passwd ist ein Eintrag für den Benutzer root. Zeige ihn an.",
       "hint": "Schau dir /etc/passwd mit cat an und finde die Zeile, die mit 'root:' beginnt.",
+      "commands": ["cat", "grep"],
       "goal": { "type": "output-contains", "substring": "root:x:0:0" },
       "xp": 20
     },
@@ -167,6 +169,7 @@
       "title": "Ordner für Aufgaben",
       "description": "Lege einen Ordner 'aufgaben' in deinem Home an.",
       "hint": "mkdir /home/user/aufgaben",
+      "commands": ["mkdir"],
       "goal": { "type": "file-exists", "path": "/home/user/aufgaben" },
       "xp": 15
     },
@@ -177,6 +180,7 @@
       "title": "Kopie anlegen",
       "description": "Kopiere /etc/hosts nach /tmp/kopie.txt.",
       "hint": "Der Befehl cp kopiert Dateien: cp /etc/hosts /tmp/kopie.txt",
+      "commands": ["cp"],
       "goal": { "type": "file-exists", "path": "/tmp/kopie.txt" },
       "xp": 15
     },
@@ -187,6 +191,7 @@
       "title": "Weg damit",
       "description": "Lösche die Datei /tmp/neu.txt (falls sie nicht existiert, ist das Ziel bereits erreicht).",
       "hint": "Der Befehl rm löscht Dateien: rm /tmp/neu.txt",
+      "commands": ["rm"],
       "goal": { "type": "file-not-exists", "path": "/tmp/neu.txt" },
       "xp": 15
     },
@@ -197,6 +202,7 @@
       "title": "Umbenennen",
       "description": "Benenne /tmp/kopie.txt in /tmp/umbenannt.txt um.",
       "hint": "mv /tmp/kopie.txt /tmp/umbenannt.txt",
+      "commands": ["mv"],
       "goal": { "type": "file-exists", "path": "/tmp/umbenannt.txt" },
       "xp": 15
     },
@@ -423,11 +429,12 @@
       "module": "text-processing",
       "difficulty": "hard",
       "title": "In-place ändern",
-      "description": "Ersetze in /home/user/notes.txt den Text 'Meine Notizen' durch 'Geänderte Notizen' und speichere die Datei.",      "hint": "sed -i 's/alt/neu/' DATEI ändert die Datei direkt.",
+      "description": "Ersetze in /home/user/notes.txt den Text 'Meine Notizen' durch 'Geänderte Notizen' und speichere die Datei.",
+      "hint": "sed -i 's/alt/neu/' DATEI ändert die Datei direkt.",
       "goal": {
         "type": "command-executed",
         "command": "sed",
-        "args": ["-i", "s/Meine Notizen/Geänderte Notizen/", "/home/user/notes.txt"]      
+        "args": ["-i", "s/Meine Notizen/Geänderte Notizen/", "/home/user/notes.txt"]
       },
       "xp": 30
     },
@@ -639,6 +646,7 @@
       "title": "Rechte prüfen",
       "description": "Prüfe mit stat, ob /etc/hosts wirklich die Rechte 600 hat.",
       "hint": "stat /etc/hosts zeigt Mode: 0600 (rw-------).",
+      "commands": ["chmod", "stat"],
       "goal": {
         "type": "file-mode",
         "path": "/etc/hosts",
@@ -653,6 +661,7 @@
       "title": "Besitzer wechseln",
       "description": "Ändere den Besitzer von /etc/hosts auf 'user'.",
       "hint": "chown user /etc/hosts",
+      "commands": ["chown"],
       "goal": {
         "type": "file-owner",
         "path": "/etc/hosts",
@@ -667,6 +676,7 @@
       "title": "Besitzer und Gruppe",
       "description": "Setze Besitzer und Gruppe von /etc/hosts auf 'user:user'.",
       "hint": "chown user:user /etc/hosts",
+      "commands": ["chown"],
       "goal": {
         "type": "file-owner",
         "path": "/etc/hosts",
@@ -698,6 +708,7 @@
       "title": "Ordner-Rechte",
       "description": "Setze die Rechte des Ordners /home/user/projects auf 700 (rwx------).",
       "hint": "chmod 700 /home/user/projects — 448 im Dezimalsystem entspricht 0o700.",
+      "commands": ["chmod"],
       "goal": {
         "type": "file-mode",
         "path": "/home/user/projects",

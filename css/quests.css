@@ -25,10 +25,69 @@
   margin-bottom: 4px;
 }
 
+/* spec016b §3: the `hint` area is now a flex row (label, command
+   chip, toggle button). The full instructional sentence moved into
+   `.quest-panel__hint-detail`, which is hidden by default and toggled
+   by the `»` button. The old italic single-line hint style is gone —
+   replaced by this row + the detail block below. */
 .quest-panel__hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.8rem;
   color: #94a3b8;
+  margin-top: 4px;
+}
+
+.quest-panel__hint-label {
   font-style: italic;
+  color: #94a3b8;
+}
+
+.quest-panel__hint-commands {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: #e2e8f0;
+  background: #1e293b;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+}
+
+.quest-panel__hint-toggle {
+  background: transparent;
+  border: none;
+  color: #60a5fa;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.quest-panel__hint-toggle:hover {
+  color: #93c5fd;
+}
+
+.quest-panel__hint-arrow {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+/* Arrow rotation is driven by `aria-expanded`, not by a separate
+   class — one attribute is the single source of truth for both the
+   screen reader announcement and the visual state. */
+.quest-panel__hint-toggle[aria-expanded="true"] .quest-panel__hint-arrow {
+  transform: rotate(90deg);
+}
+
+.quest-panel__hint-detail {
+  margin-top: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  background: #0b1220;
+  border-left: 2px solid #4ade80;
+  border-radius: 2px;
 }
 
 .quest-panel--done .quest-panel__title {
