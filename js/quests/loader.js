@@ -3,8 +3,9 @@
  *
  * Reads a `quests.json`-shaped document (an object with a `quests` array),
  * validates every quest against the schema in spec005a §1 (+ spec012a
- * `difficulty`, + spec012b `goal.redirects` / `goal.pipeline`), checks
- * that all `id`s are unique, and returns the array.
+ * `difficulty`, + spec012b `goal.redirects` / `goal.pipeline`,
+ * + spec014b `file-mode` / `file-owner`, + spec015b `file-not-exists`),
+ * checks that all `id`s are unique, and returns the array.
  *
  * No VFS, no DOM, no UI, no shell — this module is pure logic. `fetch`
  * is only used as the default value of the `fetchFn` parameter; callers
@@ -49,6 +50,7 @@ const ALLOWED_GOAL_TYPES = Object.freeze([
   'command-executed',
   'file-exists',
   'file-mode',
+  'file-not-exists',
   'file-owner',
   'output-contains',
 ]);
@@ -151,6 +153,23 @@ export function validateQuest(quest, index) {
   if (goal.type === 'command-executed') {
     validateCommandExecutedGoal(goal, fail);
   } else if (goal.type === 'file-exists') {
+    // NOTE (future hardening, review NICE 1 to spec015b): the
+    // validator only checks the fields it KNOWS about. A goal like
+    // `{ type: 'file-exists', path: '/x', command: 'rm' }` is
+    // accepted; the stray `command` is silently ignored. Same for
+    // `file-not-exists`. Rejecting unknown fields would be a
+    // stricter contract, but it is not in any current spec and
+    // would break `quests.json` files that carry harmless comments
+    // as extra fields. Deferred.
+    if (typeof goal.path !== 'string' || goal.path.length === 0) {
+      fail('goal.path', 'goal.path must be a non-empty string');
+    }
+  } else if (goal.type === 'file-not-exists') {
+    // spec015b §1: path-only goal, same shape as `file-exists` but
+    // opposite semantics (solved when the path does NOT exist).
+    // No other fields to validate. See the hardening note in the
+    // `file-exists` branch above — stray fields are accepted on
+    // purpose for now.
     if (typeof goal.path !== 'string' || goal.path.length === 0) {
       fail('goal.path', 'goal.path must be a non-empty string');
     }

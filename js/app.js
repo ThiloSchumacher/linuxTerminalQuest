@@ -68,6 +68,8 @@ function buildPrompt(env) {
  *   - `env`            via `restoreEnv` / `saveAppState`
  *   - `history`        via `restoreHistory` / `saveAppState`
  *   - `quests.solved`  via `restoreQuests` / `saveAppState`
+ *   - `quests.activeQuestId` via `restoreQuests` / `saveAppState`
+ *                         (spec015a §2)
  *   - `vfs`            via `restoreVFS` / `saveAppState`
  *
  * Derived on load (NOT persisted):
@@ -286,6 +288,40 @@ function boot() {
         questEngine,
         xpTracker,
         badgeTracker,
+        // spec015a §4: user-driven quest selection. Selecting a quest
+        // refreshes the visible UI, then persists the change. The
+        // order is deliberate — see the comment below.
+        onQuestSelect: (questId) => {
+          try {
+            questEngine.setActiveQuest(questId);
+          } catch {
+            // EQUEST_UNKNOWN / EQUEST_SOLVED — the UI only makes
+            // `available` quests clickable, so this should not fire.
+            // A silent no-op preserves the sidebar render and lets
+            // the user click again.
+            return;
+          }
+          // Refresh FIRST, persist SECOND. If `saveAppState` throws
+          // (storage quota, private-mode storage disabled), the user
+          // still sees the new active quest — matching their mental
+          // model ("I clicked, it changed"). The persisted state may
+          // lag until the next successful save (e.g. next command);
+          // on reload the previous active id comes back, the
+          // least-surprising fallback for a storage failure.
+          panel.refresh();
+          sidebar.refresh();
+          try {
+            saveAppState(storage, { env, lineEditor, questEngine, vfs });
+          } catch {
+            // silent — best-effort persist. See comment above.
+            // Wrapping the save (rather than the whole callback) keeps
+            // the click handler's caller (the `li.addEventListener`
+            // arrow in sidebar.js) free of uncaught errors, matching
+            // the pre-refresh-reorder behaviour for storage failures.
+            // No `console.error` here: `app.js` is restricted to
+            // exactly two boot-path errors (see module JSDoc).
+          }
+        },
         resetHandler: () => {
           if (!confirm('Allen Fortschritt zurücksetzen?')) return;
           storage.clear();
@@ -333,26 +369,33 @@ if (document.readyState === 'loading') {
 
 // --- Service Worker ---
 //
-// Registered in PRODUCTION only. In local development the SW causes
-// endless cache-invalidation pain: every code change requires a
-// manual `about:serviceworkers`-deregistration or a CACHE_VERSION
-// bump, and Firefox's controllerchange race means the update often
-// doesn't reach the page anyway. None of that matters for
-// development; the SW's value is offline capability, which we test
-// against GitHub Pages, not against Live Server on 127.0.0.1.
+// ORIGIN NOTE (not from spec015a): the two elements below — the
+// `isDev` guard and `updateViaCache: 'none'` — were added during a
+// debug session that resolved a "sidebar disappears after reload"
+// incident (see the sw.js network-first app-shell change in the same
+// round). They are NOT part of spec015a's scope. They are documented
+// here so a reviewer reading a future spec-diff does not mistake them
+// for an unannounced change. If the project ever formalises these
+// into a spec, replace this note with a spec reference.
+//
+//   - `isDev` guard: in local development the SW causes endless
+//     cache-invalidation pain — every code change requires a manual
+//     `about:serviceworkers`-deregistration or a CACHE_VERSION bump.
+//     None of that matters for development; the SW's value is
+//     offline capability, which is tested against GitHub Pages.
+//
+//   - `updateViaCache: 'none'`: forces the browser to bypass its
+//     HTTP cache when checking sw.js for updates. Without it,
+//     Firefox (and Safari, and some Chrome configurations) may serve
+//     the OLD sw.js from the HTTP cache during the update check —
+//     meaning a new CACHE_VERSION is never seen, and users stay on
+//     the old bashquest-vX cache indefinitely.
 //
 // The path `'./sw.js'` is RELATIVE (not `/sw.js`): it binds the SW
 // scope to the URL of index.html. On a GitHub-Pages project page
 // (`user.github.io/repo/`) that yields a scope of `/repo/` — an
 // absolute `/sw.js` would fail there with a SecurityError ("scope
 // not allowed"). Do not change to an absolute path.
-//
-// `updateViaCache: 'none'` forces the browser to bypass its HTTP
-// cache when checking sw.js for updates. Without it, Firefox (and
-// Safari, and some Chrome configurations) may serve the OLD sw.js
-// from the HTTP cache during the update check — meaning a new
-// CACHE_VERSION is never seen, and users stay on the old
-// bashquest-vX cache indefinitely.
 //
 // No `controllerchange`-triggered reload is needed: the SW uses
 // network-first for the app shell (spec013a review round), so an

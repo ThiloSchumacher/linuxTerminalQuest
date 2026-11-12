@@ -185,9 +185,9 @@
       "module": "files",
       "difficulty": "easy",
       "title": "Weg damit",
-      "description": "Lösche die Datei /tmp/neu.txt (falls sie existiert, erstelle sie mit touch).",
-      "hint": "Der Befehl rm löscht Dateien.",
-      "goal": { "type": "command-executed", "command": "rm", "args": ["/tmp/neu.txt"] },
+      "description": "Lösche die Datei /tmp/neu.txt (falls sie nicht existiert, ist das Ziel bereits erreicht).",
+      "hint": "Der Befehl rm löscht Dateien: rm /tmp/neu.txt",
+      "goal": { "type": "file-not-exists", "path": "/tmp/neu.txt" },
       "xp": 15
     },
     {

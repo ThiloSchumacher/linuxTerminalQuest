@@ -90,8 +90,19 @@
   font-weight: 600;
 }
 
-.sidebar__quest--locked {
-  opacity: 0.5;
+/* spec015a §5: formerly `--locked`, now `--available`. Unselected,
+   unsolved quests are clickable — opacity 0.7 (not 0.5) so the row
+   reads as interactive, plus a hover state that matches the dark
+   panel background. Active and solved rows keep their existing
+   styles; only `--available` gains pointer affordance. */
+.sidebar__quest--available {
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.sidebar__quest--available:hover {
+  background: #1e293b;
+  opacity: 1;
 }
 
 .sidebar__quest-icon {
@@ -108,7 +119,7 @@
   color: #4ade80;
 }
 
-.sidebar__quest--locked .sidebar__quest-icon {
+.sidebar__quest--available .sidebar__quest-icon {
   color: #475569;
 }
 

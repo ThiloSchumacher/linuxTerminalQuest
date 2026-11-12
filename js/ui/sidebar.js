@@ -5,13 +5,13 @@ import { BADGES } from '../gamification/badges.js';
  *
  * @param {object} quest
  * @param {import('../quests/quest-engine.js').QuestEngine} questEngine
- * @returns {'solved'|'active'|'locked'}
+ * @returns {'solved'|'active'|'available'}
  */
 export function getQuestStatus(quest, questEngine) {
   if (questEngine.isSolved(quest.id)) return 'solved';
   const active = questEngine.getActiveQuest();
   if (active && active.id === quest.id) return 'active';
-  return 'locked';
+  return 'available';
 }
 
 /**
@@ -59,7 +59,8 @@ export function difficultyAriaLabel(difficulty) {
  *
  * V1 scope:
  *  - Flat list (no module grouping).
- *  - No click handlers on quests.
+ *  - Click handler on `'available'` quests only (spec015a §3.3);
+ *    selecting a quest is delegated to `onQuestSelect` if provided.
  *  - No badge-detail view — just a counter.
  *  - Reset button is optional (spec006a §5): rendered only when a
  *    `resetHandler` was supplied. Without it, no footer is rendered at
@@ -99,14 +100,30 @@ export class Sidebar {
    * @param {(() => void)|null|undefined} [opts.resetHandler] Optional.
    *   If provided, a footer with a reset button is rendered. If absent
    *   or not a function, no footer appears (backwards compatible).
+   * @param {((questId: string) => void)|null|undefined} [opts.onQuestSelect]
+   *   Optional. If provided, clicking an `'available'` quest calls
+   *   `onQuestSelect(quest.id)`. Solved and active quests are not
+   *   clickable, so the callback never fires for them (the UI
+   *   enforces the invariant; the callback does not need to
+   *   re-check). Omitted → quests are not clickable (backwards
+   *   compatible with spec005d).
    */
-  constructor({ container, questEngine, xpTracker, badgeTracker, resetHandler }) {
+  constructor({
+    container,
+    questEngine,
+    xpTracker,
+    badgeTracker,
+    resetHandler,
+    onQuestSelect,
+  }) {
     this._container = container;
     this._questEngine = questEngine;
     this._xpTracker = xpTracker;
     this._badgeTracker = badgeTracker;
     this._resetHandler =
       typeof resetHandler === 'function' ? resetHandler : null;
+    this._onQuestSelect =
+      typeof onQuestSelect === 'function' ? onQuestSelect : null;
 
     // Bind once so `removeEventListener` in unmount() uses the exact
     // same function reference as `addEventListener` in mount()/refresh().
@@ -224,6 +241,24 @@ export class Sidebar {
       title.className = 'sidebar__quest-title';
       title.textContent = quest.title;
       li.appendChild(title);
+
+      // spec015a §3.3: click handler on available quests only. The
+      // `available` status is set above via `getQuestStatus`, so the
+      // click handler is attached only when the user can meaningfully
+      // select this quest. Solved and active quests are rendered
+      // without a handler — a future CSS refactor cannot accidentally
+      // make them look interactive.
+      //
+      // The handler is re-created on every `refresh()` because
+      // `refresh()` rebuilds the DOM from `innerHTML = ''`; the
+      // listener is garbage-collected with the discarded `li`. No
+      // explicit `removeEventListener` needed — see the module JSDoc
+      // for the lifecycle rationale.
+      if (status === 'available' && this._onQuestSelect) {
+        li.addEventListener('click', () => {
+          this._onQuestSelect(quest.id);
+        });
+      }
 
       // Difficulty badge (spec012d §3). Skipped entirely for unknown
       // difficulty so a malformed quest degrades to "title only"

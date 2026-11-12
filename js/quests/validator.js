@@ -66,7 +66,10 @@ export class QuestValidator {
       case 'file-exists':
         return this._checkFileExists(goal);
       case 'file-mode':
+      case 'file-mode':
         return this._checkFileMode(goal);
+      case 'file-not-exists':
+        return this._checkFileNotExists(goal);
       case 'file-owner':
         return this._checkFileOwner(goal);
       case 'output-contains':
@@ -167,6 +170,39 @@ export class QuestValidator {
   _checkFileExists(goal) {
     const cwd = this._env.get('PWD') || '/';
     return this._vfs.exists(goal.path, cwd);
+  }
+
+  /**
+   * `file-not-exists` goal (spec015b §1): the path does NOT exist.
+   *
+   * Sibling of `_checkFileExists`, opposite semantics. The check is
+   * idempotent by design: a path that never existed is "already
+   * solved", which is the intended UX for quest-019 ("delete
+   * /tmp/neu.txt — done if it is already gone").
+   *
+   * ## Why `try/catch` with `return true`
+   *
+   * The VFS `exists(path, cwd)` returns `false` for ENOENT, ENOTDIR
+   * and ELOOP (spec008a §3.4); only EINVAL (invalid path argument)
+   * propagates as a throw. Since `validateQuest` guarantees `path` is
+   * a non-empty string, EINVAL is unreachable in practice — the
+   * `catch` is defensive against a future VFS change or a corrupted
+   * goal object. When in doubt, `file-not-exists` treats an
+   * unresolvable path as "does not exist" — the worst case is a
+   * quest that solves slightly earlier than a strict reading would
+   * suggest, preferable to a quest that never solves because of an
+   * unrelated path-resolution edge case.
+   *
+   * @param {object} goal
+   * @returns {boolean}
+   */
+  _checkFileNotExists(goal) {
+    const cwd = this._env.get('PWD') || '/';
+    try {
+      return !this._vfs.exists(goal.path, cwd);
+    } catch {
+      return true;
+    }
   }
 
   /**

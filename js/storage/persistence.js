@@ -4,7 +4,8 @@ import { serializeVFS, deserializeVFS } from '../vfs/serialize.js';
 /**
  * Persistence helpers — save/restore the app state to/from storage.
  *
- * Persisted: `env`, `history`, `quests.solved`, `vfs`.
+ * Persisted: `env`, `history`, `quests.solved`, `quests.activeQuestId`,
+ * `vfs`.
  * Derived on load (NOT persisted): XP, badges (from `quests.solved`).
  *
  * All helpers are synchronous. They never throw — Storage's silent
@@ -51,6 +52,14 @@ export function saveAppState(storage, { env, lineEditor, questEngine, vfs }) {
   storage.save('history', lineEditor.getHistory());
   if (questEngine) {
     storage.save('quests.solved', questEngine.getSolvedIds());
+    // spec015a §2.1: persisted alongside the solved list so a reload
+    // keeps the user's explicit selection. `|| null` normalises
+    // `undefined` (an old engine without the field) to `null` — the
+    // storage layer serialises both as the JSON literal `null`.
+    storage.save(
+      'quests.activeQuestId',
+      questEngine.activeQuestId || null,
+    );
   }
   // Parameter guard — see the JSDoc above. Not the same purpose as the
   // questEngine state guard; do not collapse the two guards into one
@@ -99,11 +108,22 @@ export function restoreHistory(storage, lineEditor) {
 }
 
 /**
- * Restore solved quest IDs.
+ * Restore solved quest IDs and the explicit active-quest selection.
  *
- * Unknown IDs (not present in the current quest catalogue) are dropped
- * silently. Valid IDs are marked solved in the stored order.
- * Idempotent, because QuestEngine.solveQuest is idempotent.
+ * Solved IDs: unknown IDs (not present in the current quest catalogue)
+ * are dropped silently. Valid IDs are marked solved in the stored
+ * order. Idempotent, because QuestEngine.solveQuest is idempotent.
+ *
+ * Active quest id (spec015a §2.2): only restored when it is (a) a
+ * string, (b) not already solved, and (c) known in the current
+ * catalogue. Anything else is silently ignored — the engine falls back
+ * to its auto-mode (first unsolved quest) via `getActiveQuest()`.
+ *
+ * The two keys are restored INDEPENDENTLY: an early return on
+ * `quests.solved` being non-array would silently skip the active-id
+ * restore for the "user selected a quest but never solved one, then
+ * cleared just the solved key" edge case. Partial writes must not
+ * cascade.
  *
  * @param {import('./storage.js').Storage} storage
  * @param {import('../quests/quest-engine.js').QuestEngine} questEngine
@@ -111,12 +131,21 @@ export function restoreHistory(storage, lineEditor) {
  */
 export function restoreQuests(storage, questEngine) {
   const saved = storage.load('quests.solved', null);
-  if (!Array.isArray(saved)) return;
-  const knownIds = new Set(questEngine.getAllQuests().map((q) => q.id));
-  for (const id of saved) {
-    if (typeof id === 'string' && knownIds.has(id)) {
-      questEngine.solveQuest(id);
+  if (Array.isArray(saved)) {
+    const knownIds = new Set(questEngine.getAllQuests().map((q) => q.id));
+    for (const id of saved) {
+      if (typeof id === 'string' && knownIds.has(id)) {
+        questEngine.solveQuest(id);
+      }
     }
+  }
+  const activeId = storage.load('quests.activeQuestId', null);
+  if (
+    typeof activeId === 'string' &&
+    !questEngine.isSolved(activeId) &&
+    questEngine.getQuestById(activeId)
+  ) {
+    questEngine.activeQuestId = activeId;
   }
 }
 
